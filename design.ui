@@ -501,10 +501,16 @@ background-color: rgb(255, 255, 255);</string>
      </rect>
     </property>
     <property name="sizePolicy">
-     <sizepolicy hsizetype="Minimum" vsizetype="Minimum">
-      <horstretch>0</horstretch>
-      <verstretch>0</verstretch>
+     <sizepolicy hsizetype="Maximum" vsizetype="Maximum">
+      <horstretch>255</horstretch>
+      <verstretch>255</verstretch>
      </sizepolicy>
+    </property>
+    <property name="sizeIncrement">
+     <size>
+      <width>500</width>
+      <height>500</height>
+     </size>
     </property>
     <property name="font">
      <font>
@@ -521,6 +527,12 @@ border-radius: 7px;</string>
     </property>
     <property name="text">
      <string>ЗАГРУЗИТЕ ФАЙЛ</string>
+    </property>
+    <property name="textFormat">
+     <enum>Qt::RichText</enum>
+    </property>
+    <property name="scaledContents">
+     <bool>true</bool>
     </property>
     <property name="alignment">
      <set>Qt::AlignCenter</set>
