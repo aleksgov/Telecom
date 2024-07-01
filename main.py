@@ -35,9 +35,11 @@ class MyApp(QtWidgets.QMainWindow):
         ws.title = "Список работников"
 
         # Добавляем заголовки
-        ws['A1'] = "Имя"
-        ws['B1'] = "Фамилия"
+        ws['A1'] = "ФИО"
+        ws['B1'] = "Номер"
         ws['C1'] = "Должность"
+        ws['D1'] = "Лимит"
+
 
         wb.save(self.excel_file)
 
