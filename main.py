@@ -1,8 +1,7 @@
 import os
-from PyQt5 import QtWidgets, uic
-from PyQt5.QtWidgets import QFileDialog, QMessageBox
+from PyQt5 import QtWidgets
+from PyQt5.QtWidgets import QMessageBox, QFileDialog
 from openpyxl import Workbook, load_workbook
-import pandas as pd
 from design import Ui_MainWindow
 
 
@@ -12,8 +11,12 @@ class MyApp(QtWidgets.QMainWindow):
 
         self.ui = Ui_MainWindow()
         self.ui.setupUi(self)
-        self.ui.changeButton.clicked.connect(self.manage_employees)
 
+        # Подключаем кнопки к функциям
+        self.ui.changeButton.clicked.connect(self.manage_employees)
+        self.ui.fileButton2_3.clicked.connect(self.load_file)
+
+        # Путь к файлу Excel
         self.excel_file = "employees.xlsx"
 
     def manage_employees(self):
@@ -43,22 +46,24 @@ class MyApp(QtWidgets.QMainWindow):
         ws = wb.active
 
 
-        # Подключаем кнопки к методам
-        self.ui.fileButton2_3.clicked.connect(self.load_csv)
-
-        self.data = None
-
-    def load_csv(self):
-        # Открываем диалоговое окно для выбора файла
-        options = QFileDialog.Options()
-        file_name, _ = QFileDialog.getOpenFileName(self, "QFileDialog.getOpenFileName()", "",
-                                                   "CSV Files (*.csv);;All Files (*)", options=options)
+    def load_file(self):
+        file_name, _ = QFileDialog.getOpenFileName(self, "Выберите файл", "", "Все файлы (*.*)")
         if file_name:
-            try:
-                self.data = pd.read_csv(file_name)
-                QMessageBox.information(self, "Успех", "Файл загружен успешно")
-            except Exception as e:
-                QMessageBox.critical(self, "Ошибка", f"Не удалось загрузить файл: {e}")
+            # Здесь вы можете обработать выбранный файл
+            print(f"Выбран файл: {file_name}")
+            # Например, отобразить имя файла в label
+            self.ui.fileLabel.setText(f"Файл: {os.path.basename(file_name)}")
+
+            # Если выбран Excel файл, можно его открыть
+            if file_name.endswith(('.xlsx', '.xls')):
+                try:
+                    wb = load_workbook(file_name)
+                    ws = wb.active
+                    # Здесь можно обработать данные из Excel
+                    print(f"Открыт Excel файл, листов: {len(wb.sheetnames)}")
+                except Exception as e:
+                    print(f"Ошибка при открытии Excel файла: {e}")
+                    QMessageBox.warning(self, "Ошибка", f"Не удалось открыть файл Excel: {e}")
 
 
 if __name__ == "__main__":
