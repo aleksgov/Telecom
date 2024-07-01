@@ -1,7 +1,8 @@
 import os
-from PyQt5 import QtWidgets
-from PyQt5.QtWidgets import QMessageBox
+from PyQt5 import QtWidgets, uic
+from PyQt5.QtWidgets import QFileDialog, QMessageBox
 from openpyxl import Workbook, load_workbook
+import pandas as pd
 from design import Ui_MainWindow
 
 
@@ -40,6 +41,24 @@ class MyApp(QtWidgets.QMainWindow):
     def open_existing_excel(self):
         wb = load_workbook(self.excel_file)
         ws = wb.active
+
+
+        # Подключаем кнопки к методам
+        self.ui.fileButton2_3.clicked.connect(self.load_csv)
+
+        self.data = None
+
+    def load_csv(self):
+        # Открываем диалоговое окно для выбора файла
+        options = QFileDialog.Options()
+        file_name, _ = QFileDialog.getOpenFileName(self, "QFileDialog.getOpenFileName()", "",
+                                                   "CSV Files (*.csv);;All Files (*)", options=options)
+        if file_name:
+            try:
+                self.data = pd.read_csv(file_name)
+                QMessageBox.information(self, "Успех", "Файл загружен успешно")
+            except Exception as e:
+                QMessageBox.critical(self, "Ошибка", f"Не удалось загрузить файл: {e}")
 
 
 if __name__ == "__main__":
