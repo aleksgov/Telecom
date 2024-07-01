@@ -27,26 +27,6 @@ class Ui_MainWindow(object):
 "")
         self.centralwidget = QtWidgets.QWidget(MainWindow)
         self.centralwidget.setObjectName("centralwidget")
-        self.fileButton = QtWidgets.QPushButton(self.centralwidget)
-        self.fileButton.setEnabled(True)
-        self.fileButton.setGeometry(QtCore.QRect(200, 40, 350, 55))
-        font = QtGui.QFont()
-        font.setFamily("Century Gothic")
-        font.setPointSize(22)
-        font.setBold(True)
-        font.setWeight(75)
-        font.setKerning(True)
-        font.setStyleStrategy(QtGui.QFont.PreferAntialias)
-        self.fileButton.setFont(font)
-        self.fileButton.setCursor(QtGui.QCursor(QtCore.Qt.PointingHandCursor))
-        self.fileButton.setMouseTracking(False)
-        self.fileButton.setAutoFillBackground(False)
-        self.fileButton.setStyleSheet("border: none;\n"
-"border-radius: 0px;\n"
-"background-color: rgb(91,145,250); \n"
-"color: white;\n"
-"border-radius: 7px;")
-        self.fileButton.setObjectName("fileButton")
         self.widget = QtWidgets.QWidget(self.centralwidget)
         self.widget.setGeometry(QtCore.QRect(25, 220, 700, 350))
         self.widget.setStyleSheet("background-color: rgb(255, 255, 255);\n"
@@ -143,7 +123,7 @@ class Ui_MainWindow(object):
         font.setKerning(True)
         font.setStyleStrategy(QtGui.QFont.PreferAntialias)
         self.fileButton1.setFont(font)
-        self.fileButton1.setCursor(QtGui.QCursor(QtCore.Qt.ArrowCursor))
+        self.fileButton1.setCursor(QtGui.QCursor(QtCore.Qt.PointingHandCursor))
         self.fileButton1.setMouseTracking(False)
         self.fileButton1.setAutoFillBackground(False)
         self.fileButton1.setStyleSheet("border: 2px solid rgb(146,146,146);\n"
@@ -165,7 +145,7 @@ class Ui_MainWindow(object):
         font.setKerning(True)
         font.setStyleStrategy(QtGui.QFont.PreferAntialias)
         self.fileButton2.setFont(font)
-        self.fileButton2.setCursor(QtGui.QCursor(QtCore.Qt.ArrowCursor))
+        self.fileButton2.setCursor(QtGui.QCursor(QtCore.Qt.PointingHandCursor))
         self.fileButton2.setMouseTracking(False)
         self.fileButton2.setAutoFillBackground(False)
         self.fileButton2.setStyleSheet("border: 2px solid rgb(146,146,146);\n"
@@ -176,7 +156,7 @@ class Ui_MainWindow(object):
         self.fileButton2.setObjectName("fileButton2")
         self.fileButton2_2 = QtWidgets.QPushButton(self.widget)
         self.fileButton2_2.setEnabled(True)
-        self.fileButton2_2.setGeometry(QtCore.QRect(380, 90, 300, 50))
+        self.fileButton2_2.setGeometry(QtCore.QRect(390, 100, 51, 50))
         font = QtGui.QFont()
         font.setFamily("Century Gothic")
         font.setPointSize(14)
@@ -191,6 +171,7 @@ class Ui_MainWindow(object):
         self.fileButton2_2.setStyleSheet("border: 2px solid rgb(146,146,146);\n"
 "color: rgb(146,146,146);\n"
 "border-radius: 12px;")
+        self.fileButton2_2.setText("")
         icon1 = QtGui.QIcon()
         icon1.addPixmap(QtGui.QPixmap("../../Downloads/loupe.png"), QtGui.QIcon.Normal, QtGui.QIcon.Off)
         self.fileButton2_2.setIcon(icon1)
@@ -198,6 +179,24 @@ class Ui_MainWindow(object):
         self.fileButton2_2.setShortcut("")
         self.fileButton2_2.setCheckable(False)
         self.fileButton2_2.setObjectName("fileButton2_2")
+        self.lineEdit = QtWidgets.QLineEdit(self.widget)
+        self.lineEdit.setGeometry(QtCore.QRect(440, 100, 221, 51))
+        font = QtGui.QFont()
+        font.setFamily("Century Gothic")
+        font.setPointSize(12)
+        font.setBold(True)
+        font.setWeight(75)
+        self.lineEdit.setFont(font)
+        self.lineEdit.setContextMenuPolicy(QtCore.Qt.DefaultContextMenu)
+        self.lineEdit.setToolTip("")
+        self.lineEdit.setStyleSheet("border: 2px solid rgb(146,146,146);\n"
+"color: rgb(146,146,146);\n"
+"border-radius: 12px;\n"
+"QPushButton {\n"
+"    text-align: center;\n"
+"}\n"
+"")
+        self.lineEdit.setObjectName("lineEdit")
         self.changeButton = QtWidgets.QPushButton(self.centralwidget)
         self.changeButton.setEnabled(True)
         self.changeButton.setGeometry(QtCore.QRect(100, 620, 550, 50))
@@ -227,7 +226,7 @@ class Ui_MainWindow(object):
         font.setKerning(True)
         font.setStyleStrategy(QtGui.QFont.PreferAntialias)
         self.fileButton2_3.setFont(font)
-        self.fileButton2_3.setCursor(QtGui.QCursor(QtCore.Qt.ArrowCursor))
+        self.fileButton2_3.setCursor(QtGui.QCursor(QtCore.Qt.PointingHandCursor))
         self.fileButton2_3.setMouseTracking(False)
         self.fileButton2_3.setAutoFillBackground(False)
         self.fileButton2_3.setStyleSheet("border: 2px solid rgb(146,146,146);\n"
@@ -239,6 +238,24 @@ class Ui_MainWindow(object):
         self.fileButton2_3.setIcon(icon2)
         self.fileButton2_3.setIconSize(QtCore.QSize(52, 52))
         self.fileButton2_3.setObjectName("fileButton2_3")
+        self.fileLabel = QtWidgets.QLabel(self.centralwidget)
+        self.fileLabel.setGeometry(QtCore.QRect(200, 40, 350, 55))
+        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Minimum)
+        sizePolicy.setHorizontalStretch(0)
+        sizePolicy.setVerticalStretch(0)
+        sizePolicy.setHeightForWidth(self.fileLabel.sizePolicy().hasHeightForWidth())
+        self.fileLabel.setSizePolicy(sizePolicy)
+        font = QtGui.QFont()
+        font.setFamily("Century Gothic")
+        font.setPointSize(22)
+        font.setBold(True)
+        font.setWeight(75)
+        self.fileLabel.setFont(font)
+        self.fileLabel.setStyleSheet("background-color: rgb(91,145,250); \n"
+"color: white;\n"
+"border-radius: 7px;")
+        self.fileLabel.setAlignment(QtCore.Qt.AlignCenter)
+        self.fileLabel.setObjectName("fileLabel")
         MainWindow.setCentralWidget(self.centralwidget)
         self.menubar = QtWidgets.QMenuBar(MainWindow)
         self.menubar.setGeometry(QtCore.QRect(0, 0, 750, 21))
@@ -254,10 +271,10 @@ class Ui_MainWindow(object):
     def retranslateUi(self, MainWindow):
         _translate = QtCore.QCoreApplication.translate
         MainWindow.setWindowTitle(_translate("MainWindow", "MainWindow"))
-        self.fileButton.setText(_translate("MainWindow", "ЗАГРУЗИТЕ ФАЙЛ"))
         self.diagramButton1.setText(_translate("MainWindow", "ДИАГРАММА"))
         self.CommonLabel.setText(_translate("MainWindow", "ОБЩИЙ"))
         self.IndividualLabel.setText(_translate("MainWindow", "ИНДИВИДУАЛЬНЫЙ"))
         self.diagramButton2.setText(_translate("MainWindow", "ДИАГРАММА"))
-        self.fileButton2_2.setText(_translate("MainWindow", "ИВАНОВ ИВАН ИВАНОВИЧ"))
+        self.lineEdit.setText(_translate("MainWindow", "ИВАНОВ ИВАН ИВАНОВИЧ"))
         self.changeButton.setText(_translate("MainWindow", "ДОБАВИТЬ/ИЗМЕНИТЬ СПИСОК РАБОТНИКОВ"))
+        self.fileLabel.setText(_translate("MainWindow", "ЗАГРУЗИТЕ ФАЙЛ"))
