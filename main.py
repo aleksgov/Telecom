@@ -1,4 +1,6 @@
 import os
+import csv
+import chardet
 from PyQt5 import QtWidgets
 from PyQt5.QtWidgets import QMessageBox, QFileDialog
 from openpyxl import Workbook, load_workbook
@@ -40,33 +42,51 @@ class MyApp(QtWidgets.QMainWindow):
         ws['C1'] = "Должность"
         ws['D1'] = "Лимит"
 
-
         wb.save(self.excel_file)
 
     def open_existing_excel(self):
         wb = load_workbook(self.excel_file)
         ws = wb.active
 
-
     def load_file(self):
-        file_name, _ = QFileDialog.getOpenFileName(self, "Выберите файл", "", "Все файлы (*.*)")
+        file_name, _ = QFileDialog.getOpenFileName(self, "Выберите файл", "", "CSV Files (*.csv);;Excel Files (*.xlsx *.xls)")
         if file_name:
-            # Здесь вы можете обработать выбранный файл
+            # Обработка выбранного файла
             print(f"Выбран файл: {file_name}")
-            # Например, отобразить имя файла в label
             self.ui.fileLabel.setText(f"Файл: {os.path.basename(file_name)}")
 
-            # Если выбран Excel файл, можно его открыть
-            if file_name.endswith(('.xlsx', '.xls')):
-                try:
+            try:
+                if file_name.endswith('.csv'):
+                    self.convert_csv_to_excel(file_name)
+                elif file_name.endswith(('.xlsx', '.xls')):
                     wb = load_workbook(file_name)
                     ws = wb.active
-                    # Здесь можно обработать данные из Excel
                     print(f"Открыт Excel файл, листов: {len(wb.sheetnames)}")
-                except Exception as e:
-                    print(f"Ошибка при открытии Excel файла: {e}")
-                    QMessageBox.warning(self, "Ошибка", f"Не удалось открыть файл Excel: {e}")
+            except Exception as e:
+                print(f"Ошибка при обработке файла: {e}")
+                QMessageBox.warning(self, "Ошибка", f"Не удалось обработать файл: {e}")
 
+    def convert_csv_to_excel(self, csv_file):
+        excel_file = csv_file.replace('.csv', '.xlsx')
+        wb = Workbook()
+        ws = wb.active
+
+        try:
+            with open(csv_file, 'rb') as f:
+                result = chardet.detect(f.read())
+            encoding = result['encoding']
+
+            with open(csv_file, newline='', encoding=encoding) as f:
+                reader = csv.reader(f, delimiter=';')
+                for row in reader:
+                    ws.append(row)
+
+            wb.save(excel_file)
+            QMessageBox.information(self, "Информация", f"CSV файл преобразован в Excel: {excel_file}")
+
+        except Exception as e:
+            print(f"Ошибка при чтении CSV файла: {e}")
+            QMessageBox.warning(self, "Ошибка", f"Не удалось прочитать CSV файл: {e}")
 
 if __name__ == "__main__":
     import sys
