@@ -173,7 +173,7 @@ class Ui_MainWindow(object):
 "border-radius: 12px;")
         self.fileButton2_2.setText("")
         icon1 = QtGui.QIcon()
-        icon1.addPixmap(QtGui.QPixmap("../../Downloads/loupe.png"), QtGui.QIcon.Normal, QtGui.QIcon.Off)
+        icon1.addPixmap(QtGui.QPixmap("loupe.png"), QtGui.QIcon.Normal, QtGui.QIcon.Off)
         self.fileButton2_2.setIcon(icon1)
         self.fileButton2_2.setIconSize(QtCore.QSize(30, 30))
         self.fileButton2_2.setShortcut("")

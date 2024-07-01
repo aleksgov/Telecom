@@ -349,7 +349,7 @@ border-radius: 12px;</string>
      </property>
      <property name="icon">
       <iconset>
-       <normaloff>../../Downloads/loupe.png</normaloff>../../Downloads/loupe.png</iconset>
+       <normaloff>loupe.png</normaloff>loupe.png</iconset>
      </property>
      <property name="iconSize">
       <size>
