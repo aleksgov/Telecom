@@ -127,8 +127,6 @@ class MyApp(QtWidgets.QMainWindow):
             # Добавляем заголовки
             headers = ["АБОНЕНТ", "Итого без НДС", "Сумма НДС", "Итого с НДС"]
             ws.append(headers)
-
-            # Находим индексы нужных столбцов по их названиям
             columns = {cell.value: cell.column for cell in report_ws[1] if cell.value in headers}
 
             # Копируем данные из нужных столбцов
@@ -148,14 +146,12 @@ class MyApp(QtWidgets.QMainWindow):
                         data_row.append(None)
                 ws.append(data_row)
 
-            # Добавляем формулы для столбцов "Сумма НДС" и "Итого с НДС"
-            sum_nds_column = get_column_letter(headers.index("Сумма НДС") + 1)  # +1 for 1-based index
-            total_with_nds_column = get_column_letter(headers.index("Итого с НДС") + 1)  # +1 for 1-based index
+            sum_nds_column = get_column_letter(headers.index("Сумма НДС") + 1)
+            total_with_nds_column = get_column_letter(headers.index("Итого с НДС") + 1)
             for row_idx in range(2, ws.max_row + 1):
                 sum_nds_cell = ws[f"{sum_nds_column}{row_idx}"]
-                sum_without_nds_cell = ws[f"B{row_idx}"]  # Assuming "Итого без НДС" is in column B
+                sum_without_nds_cell = ws[f"B{row_idx}"]
                 total_with_nds_cell = ws[f"{total_with_nds_column}{row_idx}"]
-
                 sum_nds_cell.value = f"={sum_without_nds_cell.coordinate} * 0.2"
                 total_with_nds_cell.value = f"={sum_without_nds_cell.coordinate} + {sum_nds_cell.coordinate}"
 
@@ -173,7 +169,7 @@ class MyApp(QtWidgets.QMainWindow):
             # Устанавливаем ширину столбцов на основе длины заголовков
             for col_idx, header in enumerate(headers, start=1):
                 column_letter = get_column_letter(col_idx)
-                column_width = max(len(str(header)) + 2, 10)  # минимальная ширина столбца 10
+                column_width = max(len(str(header)) + 2, 10)
                 ws.column_dimensions[column_letter].width = column_width
 
             ws.column_dimensions['A'].width = 15
@@ -181,7 +177,6 @@ class MyApp(QtWidgets.QMainWindow):
 
             QMessageBox.information(self, "Информация", f"Создан новый файл {self.custom_excel_file}")
 
-            # Открываем созданный файл
             self.open_excel_file(self.custom_excel_file)
 
         except Exception as e:
