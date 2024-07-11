@@ -4,8 +4,10 @@ import chardet
 from PyQt5 import QtWidgets
 from PyQt5.QtWidgets import QMessageBox, QFileDialog
 from openpyxl import Workbook, load_workbook
-from design import Ui_MainWindow
 from openpyxl.utils import get_column_letter
+from openpyxl.formula.translate import Translator
+from design import Ui_MainWindow
+from openpyxl.styles import Alignment
 
 
 class MyApp(QtWidgets.QMainWindow):
@@ -23,6 +25,7 @@ class MyApp(QtWidgets.QMainWindow):
         # Пути к файлам Excel
         self.excel_file = "Работники.xlsx"
         self.custom_excel_file = "ОБЩИЙ_ОТЧЕТ.xlsx"
+        self.report_excel_file = "ОТЧЕТ_ТЕЛЕКОМ.xlsx"
 
     def manage_employees(self):
         if not os.path.exists(self.excel_file):
@@ -36,27 +39,22 @@ class MyApp(QtWidgets.QMainWindow):
     def create_new_excel(self):
         wb = Workbook()
         ws = wb.active
-        ws.title = "Работники"
+        ws.title = "Список работников"
 
         # Добавляем заголовки
-        headers = ["ФИО", "Номер", "Должность", "Сумма лимита руб. с НДС"]
-        ws.append(headers)
-
-        # Устанавливаем ширину столбцов на основе длины заголовков
-        for col_idx, header in enumerate(headers, start=1):
-            column_letter = get_column_letter(col_idx)
-            column_width = max(len(str(header)) + 2, 10)  # минимальная ширина столбца 10
-            ws.column_dimensions[column_letter].width = column_width
+        ws['A1'] = "ФИО"
+        ws['B1'] = "Номер"
+        ws['C1'] = "Должность"
+        ws['D1'] = "Сумма лимита руб. с НДС"
 
         wb.save(self.excel_file)
 
-
-    def open_excel_file(self, file_path):
+    def open_excel_file(self, filename):
         try:
             if os.name == 'nt':  # для Windows
-                os.startfile(file_path)
+                os.startfile(filename)
             elif os.name == 'posix':  # для macOS и Linux
-                os.system(f"open {file_path}")
+                os.system(f"open {filename}")
         except Exception as e:
             QMessageBox.warning(self, "Ошибка", f"Не удалось открыть файл: {e}")
 
@@ -79,30 +77,9 @@ class MyApp(QtWidgets.QMainWindow):
                 print(f"Ошибка при обработке файла: {e}")
                 QMessageBox.warning(self, "Ошибка", f"Не удалось обработать файл: {e}")
 
-    def create_custom_excel(self):
-        wb = Workbook()
-        ws = wb.active
-        ws.title = "Данные"
-
-        # Добавляем заголовки
-        headers = ["АБОНЕНТ", "Итого без НДС", "Сумма НДС", "Итого с НДС"]
-        ws.append(headers)
-
-        # Устанавливаем ширину столбцов на основе длины заголовков
-        for col_idx, header in enumerate(headers, start=1):
-            column_letter = get_column_letter(col_idx)
-            column_width = max(len(str(header)) + 2, 10)  # минимальная ширина столбца 10
-            ws.column_dimensions[column_letter].width = column_width
-
-        wb.save(self.custom_excel_file)
-        QMessageBox.information(self, "Информация", f"Создан новый файл {self.custom_excel_file}")
-
-        # Открываем созданный файл
-        self.open_excel_file(self.custom_excel_file)
-
-
     def convert_csv_to_excel(self, csv_file):
-        excel_file = csv_file.replace('.csv', '.xlsx')
+        excel_file = "ОТЧЕТ_ТЕЛЕКОМ.xlsx"  # новое имя файла для сохранения в формате Excel
+
         wb = Workbook()
         ws = wb.active
 
@@ -135,6 +112,81 @@ class MyApp(QtWidgets.QMainWindow):
         except Exception as e:
             print(f"Ошибка при чтении CSV файла: {e}")
             QMessageBox.warning(self, "Ошибка", f"Не удалось прочитать CSV файл: {e}")
+
+    def create_custom_excel(self):
+        try:
+            # Загружаем данные из файла ОТЧЕТ_ТЕЛЕКОМ.xlsx
+            report_wb = load_workbook(self.report_excel_file, data_only=True)
+            report_ws = report_wb.active
+
+            # Создаем новый файл ОБЩИЙ_ОТЧЕТ.xlsx
+            wb = Workbook()
+            ws = wb.active
+            ws.title = "Данные"
+
+            # Добавляем заголовки
+            headers = ["АБОНЕНТ", "Итого без НДС", "Сумма НДС", "Итого с НДС"]
+            ws.append(headers)
+
+            # Находим индексы нужных столбцов по их названиям
+            columns = {cell.value: cell.column for cell in report_ws[1] if cell.value in headers}
+
+            # Копируем данные из нужных столбцов
+            for row in range(2, report_ws.max_row + 1):
+                data_row = []
+                for header in headers:
+                    col = columns.get(header)
+                    if col:
+                        cell_value = report_ws.cell(row=row, column=col).value
+                        if header == "Итого без НДС" and cell_value is not None:
+                            try:
+                                cell_value = float(str(cell_value).replace(',', '.'))
+                            except ValueError:
+                                cell_value = 0
+                        data_row.append(cell_value)
+                    else:
+                        data_row.append(None)
+                ws.append(data_row)
+
+            # Добавляем формулы для столбцов "Сумма НДС" и "Итого с НДС"
+            sum_nds_column = get_column_letter(headers.index("Сумма НДС") + 1)  # +1 for 1-based index
+            total_with_nds_column = get_column_letter(headers.index("Итого с НДС") + 1)  # +1 for 1-based index
+            for row_idx in range(2, ws.max_row + 1):
+                sum_nds_cell = ws[f"{sum_nds_column}{row_idx}"]
+                sum_without_nds_cell = ws[f"B{row_idx}"]  # Assuming "Итого без НДС" is in column B
+                total_with_nds_cell = ws[f"{total_with_nds_column}{row_idx}"]
+
+                sum_nds_cell.value = f"={sum_without_nds_cell.coordinate} * 0.2"
+                total_with_nds_cell.value = f"={sum_without_nds_cell.coordinate} + {sum_nds_cell.coordinate}"
+
+            last_row = ws.max_row + 1
+            ws.cell(row=last_row, column=1, value="Сумма:")
+
+            for col in range(2, ws.max_column + 1):
+                col_letter = get_column_letter(col)
+                ws.cell(row=last_row, column=col, value=f"=SUM({col_letter}2:{col_letter}{last_row - 1})")
+
+            for row in ws.iter_rows(min_row=2, max_row=ws.max_row-1, min_col=1, max_col=ws.max_column):
+                for cell in row:
+                    cell.alignment = Alignment(horizontal='right')
+
+            # Устанавливаем ширину столбцов на основе длины заголовков
+            for col_idx, header in enumerate(headers, start=1):
+                column_letter = get_column_letter(col_idx)
+                column_width = max(len(str(header)) + 2, 10)  # минимальная ширина столбца 10
+                ws.column_dimensions[column_letter].width = column_width
+
+            ws.column_dimensions['A'].width = 15
+            wb.save(self.custom_excel_file)
+
+            QMessageBox.information(self, "Информация", f"Создан новый файл {self.custom_excel_file}")
+
+            # Открываем созданный файл
+            self.open_excel_file(self.custom_excel_file)
+
+        except Exception as e:
+            print(f"Ошибка при создании общего отчета: {e}")
+            QMessageBox.warning(self, "Ошибка", f"Не удалось создать общий отчет: {e}")
 
 
 if __name__ == "__main__":
