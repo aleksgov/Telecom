@@ -1,6 +1,7 @@
 import os
 import csv
 import chardet
+import sys
 from PyQt5 import QtWidgets
 from PyQt5.QtWidgets import QMessageBox, QFileDialog
 from openpyxl import Workbook, load_workbook
@@ -185,8 +186,6 @@ class MyApp(QtWidgets.QMainWindow):
 
 
 if __name__ == "__main__":
-    import sys
-
     app = QtWidgets.QApplication(sys.argv)
     window = MyApp()
     window.show()
