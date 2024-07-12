@@ -120,20 +120,43 @@ class MyApp(QtWidgets.QMainWindow):
             report_wb = load_workbook(self.report_excel_file, data_only=True)
             report_ws = report_wb.active
 
+            # Загружаем данные из файла Работники.xlsx
+            employees_wb = load_workbook(self.excel_file, data_only=True)
+            employees_ws = employees_wb.active
+
+            # Создаем словарь работников
+            employees_dict = {}
+            for row in employees_ws.iter_rows(min_row=2, values_only=True):
+                if row[0] and row[1]:  # Проверяем, что ФИО и номер не пустые
+                    employees_dict[row[1]] = {
+                        'ФИО': row[0],
+                        'Должность': row[2],
+                        'Сумма лимита с НДС': row[3]
+                    }
+
             # Создаем новый файл ОБЩИЙ_ОТЧЕТ.xlsx
             wb = Workbook()
             ws = wb.active
             ws.title = "Данные"
 
             # Добавляем заголовки
-            headers = ["АБОНЕНТ", "Итого без НДС", "Сумма НДС", "Итого с НДС"]
+            headers = ["АБОНЕНТ", "ФИО", "Должность", "Итого без НДС", "Сумма НДС", "Итого с НДС", "Сумма лимита с НДС",
+                       "Перерасход"]
             ws.append(headers)
-            columns = {cell.value: cell.column for cell in report_ws[1] if cell.value in headers}
+            columns = {cell.value: cell.column for cell in report_ws[1] if
+                       cell.value in ["АБОНЕНТ", "Итого без НДС", "Сумма НДС", "Итого с НДС"]}
 
             # Копируем данные из нужных столбцов
             for row in range(2, report_ws.max_row + 1):
                 data_row = []
-                for header in headers:
+                abonent = report_ws.cell(row=row, column=columns["АБОНЕНТ"]).value
+                employee_data = employees_dict.get(abonent, {'ФИО': '', 'Должность': '', 'Сумма лимита с НДС': None})
+
+                data_row.append(abonent)  # АБОНЕНТ
+                data_row.append(employee_data['ФИО'])  # ФИО
+                data_row.append(employee_data['Должность'])  # Должность
+
+                for header in ["Итого без НДС", "Сумма НДС", "Итого с НДС"]:
                     col = columns.get(header)
                     if col:
                         cell_value = report_ws.cell(row=row, column=col).value
@@ -145,18 +168,30 @@ class MyApp(QtWidgets.QMainWindow):
                         data_row.append(cell_value)
                     else:
                         data_row.append(None)
+
+                data_row.append(employee_data['Сумма лимита с НДС'])  # Сумма лимита
+
                 ws.append(data_row)
+
+            total_with_nds_column = get_column_letter(headers.index("Итого с НДС") + 1)
+            limit_column = get_column_letter(headers.index("Сумма лимита с НДС") + 1)
+            overspend_column = get_column_letter(headers.index("Перерасход") + 1)
+
+            for row_idx in range(2, ws.max_row + 1):
+                ws[f"{overspend_column}{row_idx}"].value = (
+                    f'={limit_column}{row_idx}-{total_with_nds_column}{row_idx}'
+                )
 
             sum_nds_column = get_column_letter(headers.index("Сумма НДС") + 1)
             total_with_nds_column = get_column_letter(headers.index("Итого с НДС") + 1)
             for row_idx in range(2, ws.max_row + 1):
                 sum_nds_cell = ws[f"{sum_nds_column}{row_idx}"]
-                sum_without_nds_cell = ws[f"B{row_idx}"]
+                sum_without_nds_cell = ws[f"D{row_idx}"]
                 total_with_nds_cell = ws[f"{total_with_nds_column}{row_idx}"]
                 sum_nds_cell.value = f"={sum_without_nds_cell.coordinate} * 0.2"
                 total_with_nds_cell.value = f"={sum_without_nds_cell.coordinate} + {sum_nds_cell.coordinate}"
 
-            last_row = ws.max_row + 1
+            last_row = ws.max_row + 2
             ws.cell(row=last_row, column=1, value="Сумма:")
 
             for col in range(2, ws.max_column + 1):
