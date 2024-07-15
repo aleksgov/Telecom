@@ -6,9 +6,8 @@ from PyQt5 import QtWidgets
 from PyQt5.QtWidgets import QMessageBox, QFileDialog
 from openpyxl import Workbook, load_workbook
 from openpyxl.utils import get_column_letter
-from openpyxl.formula.translate import Translator
 from design import Ui_MainWindow
-from openpyxl.styles import Alignment
+from openpyxl.styles import Alignment, Font
 
 
 class MyApp(QtWidgets.QMainWindow):
@@ -120,28 +119,13 @@ class MyApp(QtWidgets.QMainWindow):
             report_wb = load_workbook(self.report_excel_file, data_only=True)
             report_ws = report_wb.active
 
-            # Загружаем данные из файла Работники.xlsx
-            employees_wb = load_workbook(self.excel_file, data_only=True)
-            employees_ws = employees_wb.active
-
-            # Создаем словарь работников
-            employees_dict = {}
-            for row in employees_ws.iter_rows(min_row=2, values_only=True):
-                if row[0] and row[1]:  # Проверяем, что ФИО и номер не пустые
-                    employees_dict[row[1]] = {
-                        'ФИО': row[0],
-                        'Должность': row[2],
-                        'Сумма лимита с НДС': row[3]
-                    }
-
             # Создаем новый файл ОБЩИЙ_ОТЧЕТ.xlsx
             wb = Workbook()
             ws = wb.active
-            ws.title = "Данные"
+            ws.title = "Отчет"
 
             # Добавляем заголовки
-            headers = ["АБОНЕНТ", "ФИО", "Должность", "Итого без НДС", "Сумма НДС", "Итого с НДС", "Сумма лимита с НДС",
-                       "Перерасход"]
+            headers = ["АБОНЕНТ", "Итого без НДС", "Сумма НДС", "Итого с НДС"]
             ws.append(headers)
             columns = {cell.value: cell.column for cell in report_ws[1] if
                        cell.value in ["АБОНЕНТ", "Итого без НДС", "Сумма НДС", "Итого с НДС"]}
@@ -149,14 +133,7 @@ class MyApp(QtWidgets.QMainWindow):
             # Копируем данные из нужных столбцов
             for row in range(2, report_ws.max_row + 1):
                 data_row = []
-                abonent = report_ws.cell(row=row, column=columns["АБОНЕНТ"]).value
-                employee_data = employees_dict.get(abonent, {'ФИО': '', 'Должность': '', 'Сумма лимита с НДС': None})
-
-                data_row.append(abonent)  # АБОНЕНТ
-                data_row.append(employee_data['ФИО'])  # ФИО
-                data_row.append(employee_data['Должность'])  # Должность
-
-                for header in ["Итого без НДС", "Сумма НДС", "Итого с НДС"]:
+                for header in headers:
                     col = columns.get(header)
                     if col:
                         cell_value = report_ws.cell(row=row, column=col).value
@@ -169,24 +146,15 @@ class MyApp(QtWidgets.QMainWindow):
                     else:
                         data_row.append(None)
 
-                data_row.append(employee_data['Сумма лимита с НДС'])  # Сумма лимита
-
                 ws.append(data_row)
 
             total_with_nds_column = get_column_letter(headers.index("Итого с НДС") + 1)
-            limit_column = get_column_letter(headers.index("Сумма лимита с НДС") + 1)
-            overspend_column = get_column_letter(headers.index("Перерасход") + 1)
-
-            for row_idx in range(2, ws.max_row + 1):
-                ws[f"{overspend_column}{row_idx}"].value = (
-                    f'={limit_column}{row_idx}-{total_with_nds_column}{row_idx}'
-                )
 
             sum_nds_column = get_column_letter(headers.index("Сумма НДС") + 1)
             total_with_nds_column = get_column_letter(headers.index("Итого с НДС") + 1)
             for row_idx in range(2, ws.max_row + 1):
                 sum_nds_cell = ws[f"{sum_nds_column}{row_idx}"]
-                sum_without_nds_cell = ws[f"D{row_idx}"]
+                sum_without_nds_cell = ws[f"B{row_idx}"]
                 total_with_nds_cell = ws[f"{total_with_nds_column}{row_idx}"]
                 sum_nds_cell.value = f"={sum_without_nds_cell.coordinate} * 0.2"
                 total_with_nds_cell.value = f"={sum_without_nds_cell.coordinate} + {sum_nds_cell.coordinate}"
@@ -207,12 +175,63 @@ class MyApp(QtWidgets.QMainWindow):
                 column_letter = get_column_letter(col_idx)
                 column_width = max(len(str(header)) + 2, 10)
                 ws.column_dimensions[column_letter].width = column_width
-
             ws.column_dimensions['A'].width = 15
+
+            # Создаем вторую таблицу на новом листе
+            second_ws = wb.create_sheet(title="Подробный отчет")
+
+            data = [
+                ["Сведения о расходовании денежных средств на мобильную связь Ухтинский филиал"],
+                ["за период с 01 по 30 апреля 2024 г."],
+                ["Номер телефона", "ФИО", "Должность", "Сумма лимита руб. с НДС",
+                 "Фактическая сумма Руб. с НДС", "Фактическая сумма Руб.без НДС",
+                 "Перерасход", "Счет затрат", " ", "Тариф"]
+            ]
+
+            # Добавляем данные в лист
+            for row in data:
+                second_ws.append(row)
+
+            # Объединяем ячейки перед применением стилей
+            second_ws.merge_cells('A1:J1')
+            second_ws.merge_cells('A2:J2')
+            second_ws.merge_cells('H3:I3')
+
+            def apply_header_style(ws, cell):
+                ws[cell].alignment = Alignment(horizontal='center')
+                ws[cell].font = Font(name='Arial Cyr', bold=True, size=12)
+
+            def apply_normal_cell_style(ws, cell):
+                ws[cell].alignment = Alignment(horizontal='center', vertical='center', wrap_text=True)
+                ws[cell].font = Font(name='Calibri', size=10)
+
+            apply_header_style(second_ws, 'A1')
+            apply_header_style(second_ws, 'A2')
+
+            for row in second_ws.iter_rows():
+                for cell in row:
+                    if cell.coordinate not in ['A1', 'A2']:  # Исключаем ячейки заголовков
+                        apply_normal_cell_style(second_ws, cell.coordinate)
+
+            for row in second_ws.iter_rows(min_row=4, min_col=1):
+                for cell in row:
+                    cell.font = Font(size=12)
+
+            column_widths = [125, 135, 300, 80, 85, 85, 75, 65, 65, 65]  # Ширина столбцов
+            for i, width in enumerate(column_widths, start=1):
+                excel_width = width / 7  # Преобразуем пиксели в "экселевские" единицы
+                second_ws.column_dimensions[get_column_letter(i)].width = excel_width
+
+            # Настройка высоты строки
+            second_ws.row_dimensions[3].height = 50
+
+            # Сохранение файла
             wb.save(self.custom_excel_file)
 
+            # Вывод информационного сообщения
             QMessageBox.information(self, "Информация", f"Создан новый файл {self.custom_excel_file}")
 
+            # Открытие файла
             self.open_excel_file(self.custom_excel_file)
 
         except Exception as e:
