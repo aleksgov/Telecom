@@ -119,6 +119,10 @@ class MyApp(QtWidgets.QMainWindow):
             report_wb = load_workbook(self.report_excel_file, data_only=True)
             report_ws = report_wb.active
 
+            # Загружаем данные из файла Работники.xlsx
+            workers_wb = load_workbook('Работники.xlsx', data_only=True)
+            workers_ws = workers_wb.active
+
             # Создаем новый файл ОБЩИЙ_ОТЧЕТ.xlsx
             wb = Workbook()
             ws = wb.active
@@ -147,8 +151,6 @@ class MyApp(QtWidgets.QMainWindow):
                         data_row.append(None)
 
                 ws.append(data_row)
-
-            total_with_nds_column = get_column_letter(headers.index("Итого с НДС") + 1)
 
             sum_nds_column = get_column_letter(headers.index("Сумма НДС") + 1)
             total_with_nds_column = get_column_letter(headers.index("Итого с НДС") + 1)
@@ -224,6 +226,43 @@ class MyApp(QtWidgets.QMainWindow):
 
             # Настройка высоты строки
             second_ws.row_dimensions[3].height = 50
+
+            # Копируем данные из столбца "АБОНЕНТ" на первом листе в столбец "Номер телефона" на втором листе
+            abonents = []
+            for row in report_ws.iter_rows(min_row=2, min_col=columns["АБОНЕНТ"], max_col=columns["АБОНЕНТ"], max_row=report_ws.max_row):
+                abonents.append(row[0].value)
+
+            for idx, abonent in enumerate(abonents, start=1):
+                second_ws.cell(row=idx + 3, column=1, value=abonent)
+
+            # Копируем данные из столбцов "ФИО" и "Должность" файла Работники в соответствующие столбцы на втором листе
+            fio_column = None
+            position_column = None
+            limit_column = None
+            for cell in workers_ws[1]:
+                if cell.value == "ФИО":
+                    fio_column = cell.column
+                if cell.value == "Должность":
+                    position_column = cell.column
+                if cell.value == "Сумма лимита руб. с НДС":
+                    limit_column = cell.column
+
+            if fio_column is not None:
+                for row_idx, row in enumerate(workers_ws.iter_rows(min_row=2, min_col=fio_column, max_col=fio_column, max_row=workers_ws.max_row), start=1):
+                    second_ws.cell(row=row_idx + 3, column=2, value=row[0].value)
+
+            if position_column is not None:
+                for row_idx, row in enumerate(workers_ws.iter_rows(min_row=2, min_col=position_column, max_col=position_column, max_row=workers_ws.max_row), start=1):
+                    second_ws.cell(row=row_idx + 3, column=3, value=row[0].value)
+
+            if limit_column is not None:
+                for row_idx, row in enumerate(workers_ws.iter_rows(min_row=2, min_col=limit_column, max_col=limit_column, max_row=workers_ws.max_row), start=1):
+                    second_ws.cell(row=row_idx + 3, column=4, value=row[0].value)
+
+            # Применяем стили к столбцам "Номер телефона", "ФИО" и "Должность"
+            for row in second_ws.iter_rows(min_row=4, max_row=len(abonents) + 3, min_col=1, max_col=4):
+                for cell in row:
+                    apply_normal_cell_style(second_ws, cell.coordinate)
 
             # Сохранение файла
             wb.save(self.custom_excel_file)
