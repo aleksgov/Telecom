@@ -2,6 +2,7 @@ import os
 import csv
 import chardet
 import sys
+from datetime import datetime
 from PyQt5 import QtWidgets
 from PyQt5.QtWidgets import QMessageBox, QFileDialog
 from openpyxl import Workbook, load_workbook
@@ -182,9 +183,27 @@ class MyApp(QtWidgets.QMainWindow):
             # Создаем вторую таблицу на новом листе
             second_ws = wb.create_sheet(title="Подробный отчет")
 
+            start_period_col = None
+            end_period_col = None
+            for col in range(1, report_ws.max_column + 1):
+                header = report_ws.cell(row=1, column=col).value
+                if header == "Начало периода":
+                    start_period_col = col
+                elif header == "Конец периода":
+                    end_period_col = col
+                if start_period_col and end_period_col:
+                    break
+
+            start_period = report_ws.cell(row=2, column=start_period_col).value if start_period_col else "01"
+            end_period = report_ws.cell(row=2, column=end_period_col).value if end_period_col else "30"
+
+            # Форматируем даты
+            start_date = start_period.strftime("%d.%m.%Y") if isinstance(start_period, datetime) else start_period
+            end_date = end_period.strftime("%d.%m.%Y") if isinstance(end_period, datetime) else end_period
+
             data = [
                 ["Сведения о расходовании денежных средств на мобильную связь Ухтинский филиал"],
-                ["за период с 01 по 30 апреля 2024 г."],
+                [f"за период с {start_date} по {end_date} г."],
                 ["Номер телефона", "ФИО", "Должность", "Сумма лимита руб. с НДС",
                  "Фактическая сумма Руб. с НДС", "Фактическая сумма Руб.без НДС",
                  "Перерасход", "Счет затрат", " ", "Тариф"]
