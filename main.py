@@ -8,8 +8,7 @@ from PyQt5.QtWidgets import QMessageBox, QFileDialog
 from openpyxl import Workbook, load_workbook
 from openpyxl.utils import get_column_letter
 from design import Ui_MainWindow
-from openpyxl.styles import Alignment, Font
-
+from openpyxl.styles import Alignment, Font, NamedStyle
 
 class MyApp(QtWidgets.QMainWindow):
     def __init__(self):
@@ -218,27 +217,38 @@ class MyApp(QtWidgets.QMainWindow):
             second_ws.merge_cells('A2:J2')
             second_ws.merge_cells('H3:I3')
 
-            def apply_header_style(ws, cell):
+            def header_style(ws, cell):
                 ws[cell].alignment = Alignment(horizontal='center')
                 ws[cell].font = Font(name='Arial Cyr', bold=True, size=12)
 
-            def apply_normal_cell_style(ws, cell):
+            def title_style(ws, cell):
                 ws[cell].alignment = Alignment(horizontal='center', vertical='center', wrap_text=True)
-                ws[cell].font = Font(name='Calibri', size=10)
+                ws[cell].font = Font(name='Arial Cyr', size=9)
 
-            apply_header_style(second_ws, 'A1')
-            apply_header_style(second_ws, 'A2')
+            def regular_style(ws, cell):
+                ws[cell].alignment = Alignment(horizontal='center', vertical='center', wrap_text=True)
+                ws[cell].font = Font(name='Liberation Serif', size=12)
 
+            # Применяем header style к ячейкам A1 и A2
+            header_style(second_ws, 'A1')
+            header_style(second_ws, 'A2')
+
+            # Применяем title style к ячейкам A3-J3
+            for col in range(1, 11):  # A-J -> 1-10
+                cell = second_ws.cell(row=3, column=col)
+                title_style(second_ws, cell.coordinate)
+
+            # Применяем regular style к остальным ячейкам
             for row in second_ws.iter_rows():
                 for cell in row:
-                    if cell.coordinate not in ['A1', 'A2']:  # Исключаем ячейки заголовков
-                        apply_normal_cell_style(second_ws, cell.coordinate)
+                    if cell.coordinate not in ['A1', 'A2'] and not ('A3' <= cell.coordinate <= 'J3'):
+                        regular_style(second_ws, cell.coordinate)
 
             for row in second_ws.iter_rows(min_row=4, min_col=1):
                 for cell in row:
                     cell.font = Font(size=12)
 
-            column_widths = [125, 135, 300, 80, 85, 85, 75, 65, 65, 65]  # Ширина столбцов
+            column_widths = [125, 135, 240, 80, 85, 85, 75, 65, 65, 65]  # Ширина столбцов
             for i, width in enumerate(column_widths, start=1):
                 excel_width = width / 7  # Преобразуем пиксели в "экселевские" единицы
                 second_ws.column_dimensions[get_column_letter(i)].width = excel_width
@@ -246,15 +256,23 @@ class MyApp(QtWidgets.QMainWindow):
             # Настройка высоты строки
             second_ws.row_dimensions[3].height = 50
 
-            # Копируем данные из столбца "АБОНЕНТ" на первом листе в столбец "Номер телефона" на втором листе
+            phone_style = NamedStyle(name="phone_style")
+            phone_style.number_format = '[<=9999999]###-####;(###) #-##-##'
+            phone_style.alignment = Alignment(horizontal="left")
+
             abonents = []
-            for row in report_ws.iter_rows(min_row=2, min_col=columns["АБОНЕНТ"], max_col=columns["АБОНЕНТ"], max_row=report_ws.max_row):
-                abonents.append(row[0].value)
+            for row in report_ws.iter_rows(min_row=2, min_col=columns["АБОНЕНТ"], max_col=columns["АБОНЕНТ"],
+                                           max_row=report_ws.max_row):
+                cell_value = row[0].value
+                if cell_value is not None:
+                    # Преобразуем номер телефона в нужный формат
+                    phone_number = f"{int(cell_value):010}"
+                    formatted_number = f"({phone_number[:5]}) {phone_number[5]}-{phone_number[6:8]}-{phone_number[8:]}"
+                    abonents.append(formatted_number)
 
             for idx, abonent in enumerate(abonents, start=1):
                 second_ws.cell(row=idx + 3, column=1, value=abonent)
 
-            # Копируем данные из столбцов "ФИО" и "Должность" файла Работники в соответствующие столбцы на втором листе
             fio_column = None
             position_column = None
             limit_column = None
@@ -278,18 +296,24 @@ class MyApp(QtWidgets.QMainWindow):
                 for row_idx, row in enumerate(workers_ws.iter_rows(min_row=2, min_col=limit_column, max_col=limit_column, max_row=workers_ws.max_row), start=1):
                     second_ws.cell(row=row_idx + 3, column=4, value=row[0].value)
 
-            # Применяем стили к столбцам "Номер телефона", "ФИО" и "Должность"
-            for row in second_ws.iter_rows(min_row=4, max_row=len(abonents) + 3, min_col=1, max_col=4):
+            for row in report_ws.iter_rows(min_row=2, min_col=columns["Итого без НДС"],
+                                           max_col=columns["Итого без НДС"], max_row=report_ws.max_row):
+                cell_value = row[0].value
+                if cell_value is not None:
+                    try:
+                        cell_value = float(str(cell_value).replace(',', '.'))
+                    except ValueError:
+                        cell_value = 0
+                second_ws.cell(row=row[0].row + 2, column=6, value=cell_value)
+
+
+            for row in second_ws.iter_rows(min_row=4, max_row=len(abonents) + 3, min_col=1, max_col=6):
                 for cell in row:
-                    apply_normal_cell_style(second_ws, cell.coordinate)
+                    regular_style(second_ws, cell.coordinate)
 
             # Сохранение файла
             wb.save(self.custom_excel_file)
-
-            # Вывод информационного сообщения
             QMessageBox.information(self, "Информация", f"Создан новый файл {self.custom_excel_file}")
-
-            # Открытие файла
             self.open_excel_file(self.custom_excel_file)
 
         except Exception as e:
