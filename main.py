@@ -4,11 +4,59 @@ import chardet
 import sys
 from datetime import datetime
 from PyQt5 import QtWidgets
-from PyQt5.QtWidgets import QMessageBox, QFileDialog
+from PyQt5.QtWidgets import QFileDialog, QMessageBox
 from openpyxl import Workbook, load_workbook
 from openpyxl.utils import get_column_letter
 from design import Ui_MainWindow
 from openpyxl.styles import Alignment, Font, NamedStyle
+from PyQt5.QtGui import QFont, QIcon
+from PyQt5.QtCore import Qt
+
+
+def show_custom_message_box(parent, title, message, icon_path=None):
+    msg_box = QMessageBox(parent)
+    msg_box.setWindowTitle(title)
+    msg_box.setText(message)
+
+    # Установка пользовательского значка, если он предоставлен
+    if icon_path:
+        msg_box.setIconPixmap(QIcon(icon_path).pixmap(64, 64))
+    else:
+        msg_box.setIcon(QMessageBox.Information)
+
+    font = QFont("Century Gothic", 12)
+    msg_box.setFont(font)
+
+    msg_box.setStyleSheet("""
+        QMessageBox {
+            background-color: rgb(222, 241, 255);
+            border-radius: 10px;
+        }
+        QLabel {
+            color: rgb(30, 74, 163);
+        }
+        QPushButton {
+            background-color: rgb(88, 176, 226);
+            color: white;
+            border-radius: 5px;
+            padding: 5px 15px;
+            font-weight: bold;
+        }
+        QPushButton:hover {
+            background-color: rgb(70, 141, 181);
+        }
+        QPushButton:pressed {
+                background-color: rgb(97,193,248);
+            }
+    """)
+
+    msg_box.setStandardButtons(QMessageBox.Ok)
+    ok_button = msg_box.button(QMessageBox.Ok)
+    ok_button.setText("ОК")
+    ok_button.setFocus()
+    ok_button.setFocusPolicy(Qt.NoFocus)
+
+    return msg_box.exec_()
 
 class MyApp(QtWidgets.QMainWindow):
     def __init__(self):
@@ -31,7 +79,7 @@ class MyApp(QtWidgets.QMainWindow):
         if not os.path.exists(self.excel_file):
             # Если файл не существует, создаем новый
             self.create_new_excel()
-            QMessageBox.information(self, "Информация", "Создан новый файл Работники.xlsx")
+            show_custom_message_box(self, "Информация", "Создан новый файл Работники.xlsx")
 
         # Открываем Excel файл с помощью стандартного приложения
         self.open_excel_file(self.excel_file)
@@ -56,7 +104,7 @@ class MyApp(QtWidgets.QMainWindow):
             elif os.name == 'posix':  # для macOS и Linux
                 os.system(f"open {filename}")
         except Exception as e:
-            QMessageBox.warning(self, "Ошибка", f"Не удалось открыть файл: {e}")
+            show_custom_message_box(self, "Ошибка", f"Не удалось открыть файл: {e}")
 
     def load_file(self):
         file_name, _ = QFileDialog.getOpenFileName(self, "Выберите файл", "",
@@ -75,7 +123,7 @@ class MyApp(QtWidgets.QMainWindow):
                     print(f"Открыт Excel файл, листов: {len(wb.sheetnames)}")
             except Exception as e:
                 print(f"Ошибка при обработке файла: {e}")
-                QMessageBox.warning(self, "Ошибка", f"Не удалось обработать файл: {e}")
+                show_custom_message_box(self, "Ошибка", f"Не удалось обработать файл: {e}")
 
     def convert_csv_to_excel(self, csv_file):
         excel_file = "ОТЧЕТ_ТЕЛЕКОМ.xlsx"  # новое имя файла для сохранения в формате Excel
@@ -107,11 +155,11 @@ class MyApp(QtWidgets.QMainWindow):
                 ws.delete_cols(col)
 
             wb.save(excel_file)
-            QMessageBox.information(self, "Информация", f"CSV файл преобразован в Excel: {excel_file}")
+            show_custom_message_box(self, "Информация", f"CSV файл преобразован в Excel: {excel_file}")
 
         except Exception as e:
             print(f"Ошибка при чтении CSV файла: {e}")
-            QMessageBox.warning(self, "Ошибка", f"Не удалось прочитать CSV файл: {e}")
+            show_custom_message_box(self, "Ошибка", f"Не удалось прочитать CSV файл: {e}")
 
     def create_custom_excel(self):
         try:
@@ -313,12 +361,12 @@ class MyApp(QtWidgets.QMainWindow):
 
             # Сохранение файла
             wb.save(self.custom_excel_file)
-            QMessageBox.information(self, "Информация", f"Создан новый файл {self.custom_excel_file}")
+            show_custom_message_box(self, "Информация", f"Создан новый файл {self.custom_excel_file}")
             self.open_excel_file(self.custom_excel_file)
 
         except Exception as e:
             print(f"Ошибка при создании общего отчета: {e}")
-            QMessageBox.warning(self, "Ошибка", f"Не удалось создать общий отчет: {e}")
+            show_custom_message_box(self, "Ошибка", f"Не удалось создать общий отчет: {e}")
 
 
 if __name__ == "__main__":
