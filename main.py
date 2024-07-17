@@ -308,7 +308,6 @@ class MyApp(QtWidgets.QMainWindow):
             apply_formula(second_ws, 4, account_col, nds_with_26, 26, fact_sum_nds)
             apply_formula(second_ws, 4, account_col, nds_without_26, 26, fact_sum_no_nds)
 
-
             # Объединяем ячейки перед применением стилей
             second_ws.merge_cells('A1:J1')
             second_ws.merge_cells('A2:J2')
@@ -342,10 +341,16 @@ class MyApp(QtWidgets.QMainWindow):
                     if 'J3' <= cell.coordinate <= 'M3':
                         cell.alignment = Alignment(vertical='bottom', horizontal='center')
 
-
             for row in second_ws.iter_rows(min_row=4, min_col=1):
                 for cell in row:
                     cell.font = Font(size=12)
+
+            for row in range(10, 30):
+                cell = second_ws.cell(row=row, column=10)
+                regular_style(second_ws, cell.coordinate)
+
+            cell = second_ws.cell(row=9, column=13)
+            regular_style(second_ws, cell.coordinate)
 
             column_widths = [125, 135, 240, 111, 111, 111, 80, 80, 80, 101, 101, 101, 101]  # Ширина столбцов
             for i, width in enumerate(column_widths, start=1):
@@ -411,12 +416,63 @@ class MyApp(QtWidgets.QMainWindow):
                         cell_value = 0
                 second_ws.cell(row=row[0].row + 2, column=6, value=cell_value)
 
-            for row in second_ws.iter_rows(min_row=3, min_col=1, max_row=len(abonents) + 3, max_col=13):
+            last_row = second_ws.max_row + 1
+            second_ws.cell(row=last_row, column=1, value="Итого Ухтинский филиал:")
+            second_ws.merge_cells(f'A{last_row}:B{last_row}')
+
+            total_cell = second_ws.cell(row=last_row, column=1)
+            total_cell.font = Font(name='Arial Cyr', bold=True, size=12)
+            total_cell.alignment = Alignment(horizontal='right', vertical='center')
+
+            for col in [4, 5, 6, 10, 11, 12, 13]:
+                cell = second_ws.cell(row=last_row, column=col)
+                cell.value = f'=SUM({get_column_letter(col)}4:{get_column_letter(col)}{last_row - 1})'
+                cell.font = Font(name='Arial Cyr', bold=True, size=12)
+                cell.alignment = Alignment(horizontal='center', vertical='center')
+                cell.number_format = '#,##0.00'
+
+            for col in range(1, 14):
+                cell = second_ws.cell(row=last_row, column=col)
+                cell.border = all_border
+
+            overspend_row = last_row + 2
+            second_ws.cell(row=overspend_row, column=1, value="К удержанию из зарплаты:")
+            second_ws.merge_cells(f'A{overspend_row}:B{overspend_row}')
+            second_ws.merge_cells(f'C{overspend_row}:F{overspend_row}')
+            second_ws.cell(row=overspend_row, column=7, value=f'=SUM(G4:G{last_row - 1})')
+
+            overspend_cell = second_ws.cell(row=overspend_row, column=7)
+            overspend_cell.font = Font(name='Arial Cyr', bold=True, size=12)
+            overspend_cell.alignment = Alignment(horizontal='center', vertical='center')
+
+            for col in range(1, 7):
+                cell = second_ws.cell(row=overspend_row, column=col)
+                cell.font = Font(name='Arial Cyr', bold=True, size=12)
+                cell.alignment = Alignment(horizontal='right', vertical='center')
+                cell.border = all_border
+            second_ws.cell(row=overspend_row, column=7).number_format = '#,##0.00'
+
+            result_row = overspend_row + 2
+            second_ws.merge_cells(f'A{result_row}:C{result_row}')
+            result_cell_name = second_ws.cell(row=result_row, column=1,
+                                              value="Превышение/недорасход лимита по филиалу:")
+            result_sum_cell = second_ws.cell(row=result_row, column=6)
+            result_sum_cell.value = f'=E{last_row}-D{last_row}'
+            result_cell = second_ws.cell(row=result_row, column=7)
+            result_cell.value = (f'=IF(G{overspend_row}>0, "Перерасход", '
+                                 f'"Недорасход")')
+            result_cell_name.font = Font(name='Arial Cyr', bold=True, size=12)
+            result_cell_name.alignment = Alignment(horizontal='left', vertical='center')
+            result_sum_cell.font = Font(name='Arial Cyr', size=12)
+            result_sum_cell.alignment = Alignment(horizontal='center', vertical='center')
+
+            # Обновляем применение стилей и границ
+            for row in second_ws.iter_rows(min_row=3, min_col=1, max_row=result_row, max_col=13):
                 for cell in row:
                     if not (cell.row == 3 and 10 <= cell.column <= 13):  # Исключаем J3-M3
                         cell.border = all_border
 
-            for row in second_ws.iter_rows(min_row=4, max_row=len(abonents) + 3, min_col=1, max_col=9):
+            for row in second_ws.iter_rows(min_row=4, max_row=last_row - 1, min_col=1, max_col=9):
                 for cell in row:
                     regular_style(second_ws, cell.coordinate)
 
