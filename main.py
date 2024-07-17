@@ -272,6 +272,14 @@ class MyApp(QtWidgets.QMainWindow):
                 cell = second_ws.cell(row=row, column=fact_sum_col)
                 cell.value = f'={ws.title}!{get_column_letter(total_with_nds_col)}{row - 2}'
 
+            limit_col = 4
+            overspend_col = 7
+            for row in range(4, second_ws.max_row + 1):
+                overspend_cell = second_ws.cell(row=row, column=overspend_col)
+                formula = (f'=IF({get_column_letter(fact_sum_col)}{row}-{get_column_letter(limit_col)}{row}>0,'
+                           f'{get_column_letter(fact_sum_col)}{row}-{get_column_letter(limit_col)}{row},"")')
+                overspend_cell.value = formula
+
             # Объединяем ячейки перед применением стилей
             second_ws.merge_cells('A1:J1')
             second_ws.merge_cells('A2:J2')
