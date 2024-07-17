@@ -253,7 +253,8 @@ class MyApp(QtWidgets.QMainWindow):
                 [f"за период с {start_date} по {end_date} г."],
                 ["Номер телефона", "ФИО", "Должность", "Сумма лимита руб. с НДС",
                  "Фактическая сумма Руб. с НДС", "Фактическая сумма Руб.без НДС",
-                 "Перерасход", "Счет затрат", "Тариф"]
+                 "Перерасход", "Счет затрат", "Тариф", "Счет 20 с НДС", "Счет 20 без НДС",
+                 "Счет 26 С НДС", "Счет 26 без НДС" ]
             ]
 
             all_border = Border(
@@ -288,6 +289,26 @@ class MyApp(QtWidgets.QMainWindow):
                            f'{get_column_letter(fact_sum_col)}{row}-{get_column_letter(limit_col)}{row},"—")')
                 overspend_cell.value = formula
 
+            def apply_formula(sheet, start_row, col_condition, col_result, condition_value, col_to_copy):
+                for row in range(start_row, sheet.max_row + 1):
+                    cell = sheet.cell(row=row, column=col_result)
+                    cell.value = f'=IF({get_column_letter(col_condition)}{row}={condition_value}, {get_column_letter(col_to_copy)}{row}, "")'
+
+            fact_sum_nds = 5  # "Фактическая сумма Руб. с НДС"
+            fact_sum_no_nds = 6  # "Фактическая сумма Руб. без НДС"
+            account_col = 8  # "Счет затрат"
+            nds_with_20 = 10  # "Счет 20 с НДС"
+            nds_without_20 = 11  # "Счет 20 без НДС"
+            nds_with_26 = 12  # "Счет 26 с НДС"
+            nds_without_26 = 13  # "Счет 26 без НДС"
+
+            # Применяем формулы для каждого случая
+            apply_formula(second_ws, 4, account_col, nds_with_20, 20, fact_sum_nds)
+            apply_formula(second_ws, 4, account_col, nds_without_20, 20, fact_sum_no_nds)
+            apply_formula(second_ws, 4, account_col, nds_with_26, 26, fact_sum_nds)
+            apply_formula(second_ws, 4, account_col, nds_without_26, 26, fact_sum_no_nds)
+
+
             # Объединяем ячейки перед применением стилей
             second_ws.merge_cells('A1:J1')
             second_ws.merge_cells('A2:J2')
@@ -308,22 +329,25 @@ class MyApp(QtWidgets.QMainWindow):
             header_style(second_ws, 'A1')
             header_style(second_ws, 'A2')
 
-            # Применяем title style к ячейкам A3-J3
-            for col in range(1, 11):  # A-J -> 1-10
+            # Применяем title style к ячейкам A3-M3
+            for col in range(1, 14):  # A-J -> 1-10
                 cell = second_ws.cell(row=3, column=col)
                 title_style(second_ws, cell.coordinate)
 
             # Применяем regular style к остальным ячейкам
             for row in second_ws.iter_rows():
                 for cell in row:
-                    if cell.coordinate not in ['A1', 'A2'] and not ('A3' <= cell.coordinate <= 'J3'):
+                    if cell.coordinate not in ['A1', 'A2'] and not ('A3' <= cell.coordinate <= 'N3'):
                         regular_style(second_ws, cell.coordinate)
+                    if 'J3' <= cell.coordinate <= 'M3':
+                        cell.alignment = Alignment(vertical='bottom', horizontal='center')
+
 
             for row in second_ws.iter_rows(min_row=4, min_col=1):
                 for cell in row:
                     cell.font = Font(size=12)
 
-            column_widths = [125, 135, 240, 111, 111, 111, 80, 80, 80]  # Ширина столбцов
+            column_widths = [125, 135, 240, 111, 111, 111, 80, 80, 80, 101, 101, 101, 101]  # Ширина столбцов
             for i, width in enumerate(column_widths, start=1):
                 excel_width = width / 7  # Преобразуем пиксели в "экселевские" единицы
                 second_ws.column_dimensions[get_column_letter(i)].width = excel_width
@@ -358,6 +382,8 @@ class MyApp(QtWidgets.QMainWindow):
                     position_column = cell.column
                 if cell.value == "Сумма лимита руб. с НДС":
                     limit_column = cell.column
+                if cell.value == "Счет затрат":
+                    cost_column = cell.column
 
             if fio_column is not None:
                 for row_idx, row in enumerate(workers_ws.iter_rows(min_row=2, min_col=fio_column, max_col=fio_column, max_row=workers_ws.max_row), start=1):
@@ -371,6 +397,10 @@ class MyApp(QtWidgets.QMainWindow):
                 for row_idx, row in enumerate(workers_ws.iter_rows(min_row=2, min_col=limit_column, max_col=limit_column, max_row=workers_ws.max_row), start=1):
                     second_ws.cell(row=row_idx + 3, column=4, value=row[0].value)
 
+            if cost_column is not None:
+                for row_idx, row in enumerate(workers_ws.iter_rows(min_row=2, min_col=cost_column, max_col=cost_column, max_row=workers_ws.max_row), start=1):
+                    second_ws.cell(row=row_idx + 3, column=8, value=row[0].value)
+
             for row in report_ws.iter_rows(min_row=2, min_col=columns["Итого без НДС"],
                                            max_col=columns["Итого без НДС"], max_row=report_ws.max_row):
                 cell_value = row[0].value
@@ -381,11 +411,12 @@ class MyApp(QtWidgets.QMainWindow):
                         cell_value = 0
                 second_ws.cell(row=row[0].row + 2, column=6, value=cell_value)
 
-            for row in second_ws.iter_rows(min_row=3, min_col=1, max_row=len(abonents) + 3, max_col=9):
+            for row in second_ws.iter_rows(min_row=3, min_col=1, max_row=len(abonents) + 3, max_col=13):
                 for cell in row:
-                    cell.border = all_border
+                    if not (cell.row == 3 and 10 <= cell.column <= 13):  # Исключаем J3-M3
+                        cell.border = all_border
 
-            for row in second_ws.iter_rows(min_row=4, max_row=len(abonents) + 3, min_col=1, max_col=7):
+            for row in second_ws.iter_rows(min_row=4, max_row=len(abonents) + 3, min_col=1, max_col=9):
                 for cell in row:
                     regular_style(second_ws, cell.coordinate)
 
