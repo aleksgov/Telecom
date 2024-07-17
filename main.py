@@ -8,7 +8,7 @@ from PyQt5.QtWidgets import QFileDialog, QMessageBox
 from openpyxl import Workbook, load_workbook
 from openpyxl.utils import get_column_letter
 from design import Ui_MainWindow
-from openpyxl.styles import Alignment, Font, NamedStyle
+from openpyxl.styles import Alignment, Font, NamedStyle, Border, Side
 from PyQt5.QtGui import QFont, QIcon
 from PyQt5.QtCore import Qt
 
@@ -89,11 +89,11 @@ class MyApp(QtWidgets.QMainWindow):
         ws = wb.active
         ws.title = "Список работников"
 
-        # Добавляем заголовки
-        ws['A1'] = "ФИО"
-        ws['B1'] = "Номер"
-        ws['C1'] = "Должность"
-        ws['D1'] = "Сумма лимита руб. с НДС"
+        headers = ["ФИО", "Номер", "Должность", "Сумма лимита руб. с НДС", "Счет затрат"]
+
+        # Добавляем заголовки на лист
+        for col, header in enumerate(headers, start=1):
+            ws.cell(row=1, column=col, value=header)
 
         wb.save(self.excel_file)
 
@@ -253,8 +253,15 @@ class MyApp(QtWidgets.QMainWindow):
                 [f"за период с {start_date} по {end_date} г."],
                 ["Номер телефона", "ФИО", "Должность", "Сумма лимита руб. с НДС",
                  "Фактическая сумма Руб. с НДС", "Фактическая сумма Руб.без НДС",
-                 "Перерасход", "Счет затрат", " ", "Тариф"]
+                 "Перерасход", "Счет затрат", "Тариф"]
             ]
+
+            all_border = Border(
+                left=Side(border_style="thin", color="000000"),
+                right=Side(border_style="thin", color="000000"),
+                top=Side(border_style="thin", color="000000"),
+                bottom=Side(border_style="thin", color="000000")
+            )
 
             # Добавляем данные в лист
             for row in data:
@@ -278,13 +285,12 @@ class MyApp(QtWidgets.QMainWindow):
             for row in range(4, second_ws.max_row + 1):
                 overspend_cell = second_ws.cell(row=row, column=overspend_col)
                 formula = (f'=IF({get_column_letter(fact_sum_col)}{row}-{get_column_letter(limit_col)}{row}>0,'
-                           f'{get_column_letter(fact_sum_col)}{row}-{get_column_letter(limit_col)}{row},"")')
+                           f'{get_column_letter(fact_sum_col)}{row}-{get_column_letter(limit_col)}{row},"—")')
                 overspend_cell.value = formula
 
             # Объединяем ячейки перед применением стилей
             second_ws.merge_cells('A1:J1')
             second_ws.merge_cells('A2:J2')
-            second_ws.merge_cells('H3:I3')
 
             def header_style(ws, cell):
                 ws[cell].alignment = Alignment(horizontal='center')
@@ -317,13 +323,13 @@ class MyApp(QtWidgets.QMainWindow):
                 for cell in row:
                     cell.font = Font(size=12)
 
-            column_widths = [125, 135, 240, 80, 85, 85, 75, 65, 65, 65]  # Ширина столбцов
+            column_widths = [125, 135, 240, 111, 111, 111, 80, 80, 80]  # Ширина столбцов
             for i, width in enumerate(column_widths, start=1):
                 excel_width = width / 7  # Преобразуем пиксели в "экселевские" единицы
                 second_ws.column_dimensions[get_column_letter(i)].width = excel_width
 
             # Настройка высоты строки
-            second_ws.row_dimensions[3].height = 50
+            second_ws.row_dimensions[3].height = 38
 
             phone_style = NamedStyle(name="phone_style")
             phone_style.number_format = '[<=9999999]###-####;(###) #-##-##'
@@ -375,8 +381,11 @@ class MyApp(QtWidgets.QMainWindow):
                         cell_value = 0
                 second_ws.cell(row=row[0].row + 2, column=6, value=cell_value)
 
+            for row in second_ws.iter_rows(min_row=3, min_col=1, max_row=len(abonents) + 3, max_col=9):
+                for cell in row:
+                    cell.border = all_border
 
-            for row in second_ws.iter_rows(min_row=4, max_row=len(abonents) + 3, min_col=1, max_col=6):
+            for row in second_ws.iter_rows(min_row=4, max_row=len(abonents) + 3, min_col=1, max_col=7):
                 for cell in row:
                     regular_style(second_ws, cell.coordinate)
 
