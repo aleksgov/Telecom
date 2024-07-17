@@ -260,6 +260,18 @@ class MyApp(QtWidgets.QMainWindow):
             for row in data:
                 second_ws.append(row)
 
+            # Добавляем "Фактическую сумму Руб. с НДС"
+            total_with_nds_col = next(cell.column for cell in ws[1] if cell.value == "Итого с НДС")
+            fact_sum_col = 5
+            for row in range(2, ws.max_row - 1):
+                value = ws.cell(row=row, column=total_with_nds_col).value
+                if value is not None:
+                    second_ws.cell(row=row + 2, column=fact_sum_col, value=value)
+
+            for row in range(4, second_ws.max_row + 1):
+                cell = second_ws.cell(row=row, column=fact_sum_col)
+                cell.value = f'={ws.title}!{get_column_letter(total_with_nds_col)}{row - 2}'
+
             # Объединяем ячейки перед применением стилей
             second_ws.merge_cells('A1:J1')
             second_ws.merge_cells('A2:J2')
