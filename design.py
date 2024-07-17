@@ -48,9 +48,19 @@ class Ui_MainWindow(object):
         self.diagramButton1.setCursor(QtGui.QCursor(QtCore.Qt.PointingHandCursor))
         self.diagramButton1.setMouseTracking(False)
         self.diagramButton1.setAutoFillBackground(False)
-        self.diagramButton1.setStyleSheet("background-color: rgb(88,176,226);\n"
-"color: white;\n"
-"border-radius: 7px;")
+        self.diagramButton1.setStyleSheet("""
+            QPushButton {
+                background-color: rgb(88,176,226);
+                color: white;
+                border-radius: 7px;
+            }
+            QPushButton:hover {
+                background-color: rgb(79,158,203);
+            }
+            QPushButton:pressed {
+                background-color: rgb(97,193,248);
+            }
+        """)
         self.diagramButton1.setObjectName("diagramButton1")
         self.widget_2 = QtWidgets.QWidget(self.widget)
         self.widget_2.setGeometry(QtCore.QRect(347, 20, 5, 315))
@@ -108,9 +118,19 @@ class Ui_MainWindow(object):
         self.diagramButton2.setCursor(QtGui.QCursor(QtCore.Qt.PointingHandCursor))
         self.diagramButton2.setMouseTracking(False)
         self.diagramButton2.setAutoFillBackground(False)
-        self.diagramButton2.setStyleSheet("background-color: rgb(88,176,226);\n"
-"color: white;\n"
-"border-radius: 7px;")
+        self.diagramButton2.setStyleSheet("""
+            QPushButton {
+                background-color: rgb(88,176,226);
+                color: white;
+                border-radius: 7px;
+            }
+            QPushButton:hover {
+                background-color: rgb(79,158,203);
+            }
+            QPushButton:pressed {
+                background-color: rgb(97,193,248);
+            }
+        """)
         self.diagramButton2.setObjectName("diagramButton2")
         self.fileButton1 = QtWidgets.QPushButton(self.widget)
         self.fileButton1.setEnabled(True)
@@ -126,8 +146,19 @@ class Ui_MainWindow(object):
         self.fileButton1.setCursor(QtGui.QCursor(QtCore.Qt.PointingHandCursor))
         self.fileButton1.setMouseTracking(False)
         self.fileButton1.setAutoFillBackground(False)
-        self.fileButton1.setStyleSheet("border: 2px solid rgb(146,146,146);\n"
-"border-radius: 10px;")
+        self.fileButton1.setStyleSheet("""
+    QPushButton {
+        border: 2px solid rgb(146,146,146);
+        border-radius: 10px;
+        background-color: rgb(255, 255, 255);
+    }
+    QPushButton:hover {
+        background-color: rgb(240, 240, 240);
+    }
+    QPushButton:pressed {
+        background-color: rgb(230, 230, 230);
+    }
+""")
         self.fileButton1.setText("")
         icon = QtGui.QIcon()
         icon.addPixmap(QtGui.QPixmap("file.png"), QtGui.QIcon.Normal, QtGui.QIcon.Off)
@@ -148,8 +179,19 @@ class Ui_MainWindow(object):
         self.fileButton2.setCursor(QtGui.QCursor(QtCore.Qt.PointingHandCursor))
         self.fileButton2.setMouseTracking(False)
         self.fileButton2.setAutoFillBackground(False)
-        self.fileButton2.setStyleSheet("border: 2px solid rgb(146,146,146);\n"
-"border-radius: 10px;")
+        self.fileButton2.setStyleSheet("""
+    QPushButton {
+        border: 2px solid rgb(146,146,146);
+        border-radius: 10px;
+        background-color: rgb(255, 255, 255);
+    }
+    QPushButton:hover {
+        background-color: rgb(240, 240, 240);
+    }
+    QPushButton:pressed {
+        background-color: rgb(230, 230, 230);
+    }
+""")
         self.fileButton2.setText("")
         self.fileButton2.setIcon(icon)
         self.fileButton2.setIconSize(QtCore.QSize(60, 60))
@@ -222,9 +264,19 @@ class Ui_MainWindow(object):
         self.changeButton.setCursor(QtGui.QCursor(QtCore.Qt.PointingHandCursor))
         self.changeButton.setMouseTracking(False)
         self.changeButton.setAutoFillBackground(False)
-        self.changeButton.setStyleSheet("background-color: rgb(30, 74, 163);\n"
-"color: white;\n"
-"border-radius: 7px;")
+        self.changeButton.setStyleSheet("""
+    QPushButton {
+        background-color: rgb(30, 74, 163);
+        color: white;
+        border-radius: 7px;
+    }
+    QPushButton:hover {
+        background-color: rgb(27, 66, 146);
+    }
+    QPushButton:pressed {
+        background-color: rgb(33, 81, 179);
+    }
+""")
         self.changeButton.setObjectName("changeButton")
         self.fileButton2_3 = QtWidgets.QPushButton(self.centralwidget)
         self.fileButton2_3.setEnabled(True)
@@ -240,9 +292,19 @@ class Ui_MainWindow(object):
         self.fileButton2_3.setCursor(QtGui.QCursor(QtCore.Qt.PointingHandCursor))
         self.fileButton2_3.setMouseTracking(False)
         self.fileButton2_3.setAutoFillBackground(False)
-        self.fileButton2_3.setStyleSheet("border: 2px solid rgb(146,146,146);\n"
-"border-radius: 10px;\n"
-"background-color: rgb(255, 255, 255);")
+        self.fileButton2_3.setStyleSheet("""
+    QPushButton {
+        border: 2px solid rgb(146,146,146);
+        border-radius: 10px;
+        background-color: rgb(255, 255, 255);
+    }
+    QPushButton:hover {
+        background-color: rgb(240, 240, 240);
+    }
+    QPushButton:pressed {
+        background-color: rgb(230, 230, 230);
+    }
+""")
         self.fileButton2_3.setText("")
         icon2 = QtGui.QIcon()
         icon2.addPixmap(QtGui.QPixmap("file+.png"), QtGui.QIcon.Normal, QtGui.QIcon.Off)
@@ -264,9 +326,7 @@ class Ui_MainWindow(object):
         font.setWeight(75)
         self.fileLabel.setFont(font)
         self.fileLabel.setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
-        self.fileLabel.setStyleSheet("background-color: rgb(91,145,250); \n"
-"color: white;\n"
-"border-radius: 7px;")
+        self.fileLabel.setStyleSheet("background-color: rgb(91,145,250); color: white; border-radius: 7px;")
         self.fileLabel.setTextFormat(QtCore.Qt.RichText)
         self.fileLabel.setScaledContents(True)
         self.fileLabel.setAlignment(QtCore.Qt.AlignCenter)
