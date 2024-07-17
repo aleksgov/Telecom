@@ -260,7 +260,7 @@ class MyApp(QtWidgets.QMainWindow):
             for row in data:
                 second_ws.append(row)
 
-            # Добавляем "Фактическую сумму Руб. с НДС"
+            # Добавляем данные "Фактическая сумма Руб. с НДС"
             total_with_nds_col = next(cell.column for cell in ws[1] if cell.value == "Итого с НДС")
             fact_sum_col = 5
             for row in range(2, ws.max_row - 1):
@@ -272,6 +272,7 @@ class MyApp(QtWidgets.QMainWindow):
                 cell = second_ws.cell(row=row, column=fact_sum_col)
                 cell.value = f'={ws.title}!{get_column_letter(total_with_nds_col)}{row - 2}'
 
+            # Добавляем данные "Перерасход"
             limit_col = 4
             overspend_col = 7
             for row in range(4, second_ws.max_row + 1):
