@@ -85,49 +85,48 @@ class MyApp(QtWidgets.QMainWindow):
                 raise FileNotFoundError(f"Файл {self.custom_excel_file} не найден")
 
             wb = load_workbook(self.custom_excel_file, data_only=True)
-
-            if "Отчет" not in wb.sheetnames:
-                raise ValueError(f"Лист 'Отчет' не найден в файле {self.custom_excel_file}")
-
             ws = wb["Отчет"]
 
-            abonent_col = None
+            # Загрузка данных из файла "Работники.xlsx"
+            workers_wb = load_workbook('Работники.xlsx', data_only=True)
+            workers_ws = workers_wb.active
+
             total_without_nds_col = None
             for col in range(1, ws.max_column + 1):
                 header = ws.cell(row=1, column=col).value
-                if header == "АБОНЕНТ":
-                    abonent_col = col
-                elif header == "Итого без НДС":
+                if header == "Итого без НДС":
                     total_without_nds_col = col
-                if abonent_col and total_without_nds_col:
+                if total_without_nds_col:
                     break
 
-            if not (abonent_col and total_without_nds_col):
+            if not total_without_nds_col:
                 raise ValueError("Не удалось найти нужные столбцы в файле")
 
-            print(f"Столбец АБОНЕНТ: {abonent_col}")
-            print(f"Столбец Итого без НДС: {total_without_nds_col}")
-
-            abonents = []
             totals = []
+            fio_dict = {}
+            limit_dict = {}
+
+            # Чтение данных из файла "Работники.xlsx"
+            for row in workers_ws.iter_rows(min_row=2, values_only=True):
+                if len(row) >= 4:  # Убедимся, что в строке достаточно столбцов
+                    fio = row[0]
+                    number = row[1]
+                    limit = row[3]
+                    if fio and number and limit:
+                        fio_dict[str(number)] = fio
+                        limit_dict[str(number)] = float(limit)
+
             for row in range(2, ws.max_row):
-                abonent = ws.cell(row=row, column=abonent_col).value
                 total_without_nds = ws.cell(row=row, column=total_without_nds_col).value
-                if abonent and total_without_nds is not None:
+                if total_without_nds is not None:
                     try:
                         total_value = float(total_without_nds)
-                        total_with_nds = total_value * 1.2  # Добавляем 20% НДС
-                        # Преобразуем номер телефона в нужный формат
-                        phone_number = f"{int(abonent):010}"
-                        formatted_number = f"+7 ({phone_number[:3]}) {phone_number[3:6]}-{phone_number[6:8]}-{phone_number[8:]}"
-                        abonents.append(formatted_number)
+                        total_with_nds = total_value * 1.2
                         totals.append(total_with_nds)
                     except ValueError:
                         print(f"Не удалось преобразовать значение '{total_without_nds}' в число")
 
-            print(f"Количество собранных данных: {len(abonents)}")
-
-            if not abonents or not totals:
+            if not totals:
                 raise ValueError("Не удалось собрать данные для построения графика")
 
             dialog = QDialog(self)
@@ -135,18 +134,26 @@ class MyApp(QtWidgets.QMainWindow):
             dialog.setGeometry(100, 100, 1800, 800)
 
             fig, ax = plt.subplots(figsize=(10, 6))
-            bars = ax.bar(range(len(abonents)), totals)
+            bars = ax.bar(range(len(fio_dict)), totals)
             ax.set_xlabel("Абоненты")
             ax.set_ylabel("Итого с НДС")
             ax.set_title("Расходы по абонентам")
-            ax.set_xticks(range(len(abonents)))
-            ax.set_xticklabels(abonents, rotation=90)
+            ax.set_xticks(range(len(fio_dict)))
+            ax.set_xticklabels(list(fio_dict.values()), rotation=90, ha='right')
+
+            # Добавление линии лимита
+            for i, (fio_number, total) in enumerate(zip(fio_dict.keys(), totals)):
+                limit = limit_dict.get(fio_number.split()[0], 0)
+                ax.plot([i - 0.4, i + 0.4], [limit, limit], color='red', linestyle='--', linewidth=2)
 
             for bar in bars:
                 height = bar.get_height()
                 ax.text(bar.get_x() + bar.get_width() / 2., height,
                         f'{height:.2f}',
                         ha='center', va='bottom', rotation=0)
+
+            ax.plot([], [], color='red', linestyle='--', linewidth=2, label='Сумма лимита с НДС')
+            ax.legend(loc='lower left', bbox_to_anchor=(-0.1, -0.15))
 
             plt.tight_layout()
 
