@@ -278,9 +278,9 @@ class Ui_MainWindow(object):
     }
 """)
         self.changeButton.setObjectName("changeButton")
-        self.fileButton2_3 = QtWidgets.QPushButton(self.centralwidget)
-        self.fileButton2_3.setEnabled(True)
-        self.fileButton2_3.setGeometry(QtCore.QRect(270, 130, 220, 70))
+        self.fileButton3 = QtWidgets.QPushButton(self.centralwidget)
+        self.fileButton3.setEnabled(True)
+        self.fileButton3.setGeometry(QtCore.QRect(270, 130, 220, 70))
         font = QtGui.QFont()
         font.setFamily("Century Gothic")
         font.setPointSize(17)
@@ -288,11 +288,11 @@ class Ui_MainWindow(object):
         font.setWeight(75)
         font.setKerning(True)
         font.setStyleStrategy(QtGui.QFont.PreferAntialias)
-        self.fileButton2_3.setFont(font)
-        self.fileButton2_3.setCursor(QtGui.QCursor(QtCore.Qt.PointingHandCursor))
-        self.fileButton2_3.setMouseTracking(False)
-        self.fileButton2_3.setAutoFillBackground(False)
-        self.fileButton2_3.setStyleSheet("""
+        self.fileButton3.setFont(font)
+        self.fileButton3.setCursor(QtGui.QCursor(QtCore.Qt.PointingHandCursor))
+        self.fileButton3.setMouseTracking(False)
+        self.fileButton3.setAutoFillBackground(False)
+        self.fileButton3.setStyleSheet("""
     QPushButton {
         border: 2px solid rgb(146,146,146);
         border-radius: 10px;
@@ -305,12 +305,12 @@ class Ui_MainWindow(object):
         background-color: rgb(230, 230, 230);
     }
 """)
-        self.fileButton2_3.setText("")
+        self.fileButton3.setText("")
         icon2 = QtGui.QIcon()
         icon2.addPixmap(QtGui.QPixmap("file+.png"), QtGui.QIcon.Normal, QtGui.QIcon.Off)
-        self.fileButton2_3.setIcon(icon2)
-        self.fileButton2_3.setIconSize(QtCore.QSize(52, 52))
-        self.fileButton2_3.setObjectName("fileButton2_3")
+        self.fileButton3.setIcon(icon2)
+        self.fileButton3.setIconSize(QtCore.QSize(52, 52))
+        self.fileButton3.setObjectName("fileButton3")
         self.fileLabel = QtWidgets.QLabel(self.centralwidget)
         self.fileLabel.setGeometry(QtCore.QRect(200, 40, 360, 55))
         sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Maximum, QtWidgets.QSizePolicy.Maximum)

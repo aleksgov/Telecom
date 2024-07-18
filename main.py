@@ -70,14 +70,30 @@ class MyApp(QtWidgets.QMainWindow):
 
         # Подключаем кнопки к функциям
         self.ui.changeButton.clicked.connect(self.manage_employees)
-        self.ui.fileButton2_3.clicked.connect(self.load_file)
         self.ui.fileButton1.clicked.connect(self.create_custom_excel)
+        self.ui.fileButton2.clicked.connect(self.display_line_edit_text)
+        self.ui.fileButton3.clicked.connect(self.load_file)
         self.ui.diagramButton1.clicked.connect(self.create_histogram)
+
+        self.ui.lineEdit.setPlaceholderText("ИВАНОВ ИВАН ИВАНОВИЧ")
+        self.ui.lineEdit.setText("")
+        self.ui.lineEdit.focusInEvent = self.lineEditFocusIn
+        self.ui.lineEdit.focusOutEvent = self.lineEditFocusOut
 
         # Пути к файлам Excel
         self.excel_file = "Работники.xlsx"
         self.custom_excel_file = "ОБЩИЙ_ОТЧЕТ.xlsx"
         self.report_excel_file = "ОТЧЕТ_ТЕЛЕКОМ.xlsx"
+
+    def lineEditFocusIn(self, event):
+        if self.ui.lineEdit.text() == "ИВАНОВ ИВАН ИВАНОВИЧ":
+            self.ui.lineEdit.setText("")
+        super(QtWidgets.QLineEdit, self.ui.lineEdit).focusInEvent(event)
+
+    def lineEditFocusOut(self, event):
+        if self.ui.lineEdit.text() == "":
+            self.ui.lineEdit.setText("ИВАНОВ ИВАН ИВАНОВИЧ")
+        super(QtWidgets.QLineEdit, self.ui.lineEdit).focusOutEvent(event)
 
     def create_histogram(self):
         try:
@@ -497,8 +513,10 @@ class MyApp(QtWidgets.QMainWindow):
                     second_ws.cell(row=row_idx + 3, column=2, value=row[0].value)
 
             if position_column is not None:
-                for row_idx, row in enumerate(workers_ws.iter_rows(min_row=2, min_col=position_column, max_col=position_column, max_row=workers_ws.max_row), start=1):
-                    second_ws.cell(row=row_idx + 3, column=3, value=row[0].value)
+                for row_idx, row in enumerate(
+                        workers_ws.iter_rows(min_row=2, min_col=position_column, max_col=position_column,
+                                             max_row=workers_ws.max_row), start=1):
+                    cell = second_ws.cell(row=row_idx + 3, column=3, value=row[0].value)
 
             if limit_column is not None:
                 for row_idx, row in enumerate(workers_ws.iter_rows(min_row=2, min_col=limit_column, max_col=limit_column, max_row=workers_ws.max_row), start=1):
@@ -586,6 +604,69 @@ class MyApp(QtWidgets.QMainWindow):
         except Exception as e:
             print(f"Ошибка при создании общего отчета: {e}")
             show_custom_message_box(self, "Ошибка", f"Не удалось создать общий отчет: {e}")
+
+    def display_line_edit_text(self):
+        input_fio = self.ui.lineEdit.text().strip()
+
+        if not input_fio or input_fio == "ИВАНОВ ИВАН ИВАНОВИЧ":
+            show_custom_message_box(self, "Информация", "Пустой запрос")
+            return
+
+        file_path = "ОБЩИЙ_ОТЧЕТ.xlsx"
+
+        try:
+            wb = load_workbook(file_path)
+            ws = wb["Подробный отчет"]
+
+            # Находим столбец с ФИО (ищем в третьей строке)
+            fio_column = None
+            for cell in ws[3]:
+                if cell.value and 'фио' in str(cell.value).lower():
+                    fio_column = cell.column
+                    break
+
+            if fio_column is None:
+                show_custom_message_box(self, "Ошибка", "Столбец с ФИО не найден в файле ОБЩИЙ_ОТЧЕТ.xlsx")
+                return
+
+            print(f"Найден столбец ФИО: {ws.cell(row=3, column=fio_column).value}")
+
+            # Ищем соответствующее ФИО и сохраняем всю строку
+            fio_found = False
+            row_data = None
+            for row in ws.iter_rows(min_row=4, values_only=True):
+                if row[fio_column - 1] and row[fio_column - 1].strip().lower() == input_fio.lower():
+                    fio_found = True
+                    row_data = row
+                    break
+
+            if fio_found and row_data:
+                # Создаем новый файл Excel
+                new_wb = Workbook()
+                new_ws = new_wb.active
+
+                # Копируем заголовки
+                for col, header in enumerate(ws[3], start=1):
+                    new_ws.cell(row=1, column=col, value=header.value)
+
+                # Записываем найденную строку
+                for col, value in enumerate(row_data, start=1):
+                    new_ws.cell(row=2, column=col, value=value)
+
+                # Сохраняем файл
+                file_name = "Индивидуальный_отчет.xlsx"
+                new_wb.save(file_name)
+                show_custom_message_box(self, "Информация", f"Файл {file_name} создан успешно. Данные записаны.")
+
+                # Открываем созданный файл
+                self.open_excel_file(file_name)
+            else:
+                show_custom_message_box(self, "Информация", "ФИО не найдено")
+
+        except FileNotFoundError:
+            show_custom_message_box(self, "Ошибка", "Файл ОБЩИЙ_ОТЧЕТ.xlsx не найден")
+        except Exception as e:
+            show_custom_message_box(self, "Ошибка", f"Произошла ошибка: {str(e)}")
 
 
 if __name__ == "__main__":
