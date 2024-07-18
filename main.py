@@ -144,7 +144,12 @@ class MyApp(QtWidgets.QMainWindow):
             # Добавление линии лимита
             for i, (fio_number, total) in enumerate(zip(fio_dict.keys(), totals)):
                 limit = limit_dict.get(fio_number.split()[0], 0)
-                ax.plot([i - 0.4, i + 0.4], [limit, limit], color='red', linestyle='--', linewidth=2)
+                ax.plot([i - 0.4, i + 0.4], [limit, limit], color='#B0333A', linestyle='--', linewidth=2)
+
+                if total > limit:
+                    bars[i].set_color('#DC7077')
+                else:
+                    bars[i].set_color('#3384B0')
 
             for bar in bars:
                 height = bar.get_height()
@@ -152,7 +157,7 @@ class MyApp(QtWidgets.QMainWindow):
                         f'{height:.2f}',
                         ha='center', va='bottom', rotation=0)
 
-            ax.plot([], [], color='red', linestyle='--', linewidth=2, label='Сумма лимита с НДС')
+            ax.plot([], [], color='#B0333A', linestyle='--', linewidth=2, label='Сумма лимита с НДС')
             ax.legend(loc='lower left', bbox_to_anchor=(-0.1, -0.15))
 
             plt.tight_layout()
