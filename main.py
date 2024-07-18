@@ -11,6 +11,9 @@ from design import Ui_MainWindow
 from openpyxl.styles import Alignment, Font, NamedStyle, Border, Side
 from PyQt5.QtGui import QFont, QIcon
 from PyQt5.QtCore import Qt
+import matplotlib.pyplot as plt
+from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
+from PyQt5.QtWidgets import QVBoxLayout, QDialog
 
 
 def show_custom_message_box(parent, title, message, icon_path=None):
@@ -69,11 +72,98 @@ class MyApp(QtWidgets.QMainWindow):
         self.ui.changeButton.clicked.connect(self.manage_employees)
         self.ui.fileButton2_3.clicked.connect(self.load_file)
         self.ui.fileButton1.clicked.connect(self.create_custom_excel)
+        self.ui.diagramButton1.clicked.connect(self.create_histogram)
 
         # Пути к файлам Excel
         self.excel_file = "Работники.xlsx"
         self.custom_excel_file = "ОБЩИЙ_ОТЧЕТ.xlsx"
         self.report_excel_file = "ОТЧЕТ_ТЕЛЕКОМ.xlsx"
+
+    def create_histogram(self):
+        try:
+            if not os.path.exists(self.custom_excel_file):
+                raise FileNotFoundError(f"Файл {self.custom_excel_file} не найден")
+
+            wb = load_workbook(self.custom_excel_file, data_only=True)
+
+            if "Отчет" not in wb.sheetnames:
+                raise ValueError(f"Лист 'Отчет' не найден в файле {self.custom_excel_file}")
+
+            ws = wb["Отчет"]
+
+            abonent_col = None
+            total_without_nds_col = None
+            for col in range(1, ws.max_column + 1):
+                header = ws.cell(row=1, column=col).value
+                if header == "АБОНЕНТ":
+                    abonent_col = col
+                elif header == "Итого без НДС":
+                    total_without_nds_col = col
+                if abonent_col and total_without_nds_col:
+                    break
+
+            if not (abonent_col and total_without_nds_col):
+                raise ValueError("Не удалось найти нужные столбцы в файле")
+
+            print(f"Столбец АБОНЕНТ: {abonent_col}")
+            print(f"Столбец Итого без НДС: {total_without_nds_col}")
+
+            abonents = []
+            totals = []
+            for row in range(2, ws.max_row):
+                abonent = ws.cell(row=row, column=abonent_col).value
+                total_without_nds = ws.cell(row=row, column=total_without_nds_col).value
+                if abonent and total_without_nds is not None:
+                    try:
+                        total_value = float(total_without_nds)
+                        total_with_nds = total_value * 1.2  # Добавляем 20% НДС
+                        # Преобразуем номер телефона в нужный формат
+                        phone_number = f"{int(abonent):010}"
+                        formatted_number = f"+7 ({phone_number[:3]}) {phone_number[3:6]}-{phone_number[6:8]}-{phone_number[8:]}"
+                        abonents.append(formatted_number)
+                        totals.append(total_with_nds)
+                    except ValueError:
+                        print(f"Не удалось преобразовать значение '{total_without_nds}' в число")
+
+            print(f"Количество собранных данных: {len(abonents)}")
+
+            if not abonents or not totals:
+                raise ValueError("Не удалось собрать данные для построения графика")
+
+            dialog = QDialog(self)
+            dialog.setWindowTitle("Гистограмма расходов")
+            dialog.setGeometry(100, 100, 1800, 800)
+
+            fig, ax = plt.subplots(figsize=(10, 6))
+            bars = ax.bar(range(len(abonents)), totals)
+            ax.set_xlabel("Абоненты")
+            ax.set_ylabel("Итого с НДС")
+            ax.set_title("Расходы по абонентам")
+            ax.set_xticks(range(len(abonents)))
+            ax.set_xticklabels(abonents, rotation=90)
+
+            for bar in bars:
+                height = bar.get_height()
+                ax.text(bar.get_x() + bar.get_width() / 2., height,
+                        f'{height:.2f}',
+                        ha='center', va='bottom', rotation=0)
+
+            plt.tight_layout()
+
+            canvas = FigureCanvas(fig)
+
+            layout = QVBoxLayout()
+            layout.addWidget(canvas)
+            dialog.setLayout(layout)
+
+            dialog.exec_()
+
+        except Exception as e:
+            error_message = f"Не удалось создать гистограмму: {str(e)}\n\n"
+            error_message += "Дополнительная информация:\n"
+            error_message += f"Файл: {self.custom_excel_file}\n"
+            error_message += f"Тип ошибки: {type(e).__name__}"
+            show_custom_message_box(self, "Ошибка", error_message)
 
     def manage_employees(self):
         if not os.path.exists(self.excel_file):
