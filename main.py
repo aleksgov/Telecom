@@ -607,47 +607,53 @@ class MyApp(QtWidgets.QMainWindow):
         file_path = "ОБЩИЙ_ОТЧЕТ.xlsx"
 
         try:
-            # Загружаем файл дважды: один раз с формулами, другой раз только со значениями
-            wb_formulas = load_workbook(file_path)
-            wb_values = load_workbook(file_path, data_only=True)
+            wb = load_workbook(file_path, data_only=True)
+            ws = wb["Подробный отчет"]
 
-            ws_formulas = wb_formulas["Подробный отчет"]
-            ws_values = wb_values["Подробный отчет"]
+            # Находим нужные столбцы
+            headers = {cell.value: idx for idx, cell in enumerate(ws[3]) if cell.value}
+            fio_col = headers.get('ФИО')
+            limit_col = headers.get('Сумма лимита руб. с НДС')
+            fact_sum_col = headers.get('Фактическая сумма Руб. с НДС')
+            fact_sum_no_nds_col = headers.get('Фактическая сумма Руб.без НДС')
+            overspend_col = headers.get('Перерасход')
 
-            # Находим столбец с ФИО (ищем в третьей строке)
-            fio_column = None
-            for cell in ws_formulas[3]:
-                if cell.value and 'фио' in str(cell.value).lower():
-                    fio_column = cell.column
-                    break
-
-            if fio_column is None:
+            if fio_col is None:
                 show_custom_message_box(self, "Ошибка", "Столбец с ФИО не найден в файле ОБЩИЙ_ОТЧЕТ.xlsx")
                 return
 
-            print(f"Найден столбец ФИО: {ws_formulas.cell(row=3, column=fio_column).value}")
-
-            # Ищем соответствующее ФИО и сохраняем номер строки
+            # Ищем соответствующее ФИО и сохраняем всю строку
             fio_found = False
-            row_number = None
-            for row in ws_formulas.iter_rows(min_row=4):
-                if row[fio_column - 1].value and row[fio_column - 1].value.strip().lower() == input_fio.lower():
+            row_data = None
+            for row in ws.iter_rows(min_row=4, values_only=True):
+                if row[fio_col] and row[fio_col].strip().lower() == input_fio.lower():
                     fio_found = True
-                    row_number = row[0].row
+                    row_data = list(row)
                     break
 
-            if fio_found and row_number:
+            if fio_found and row_data:
                 # Создаем новый файл Excel
                 new_wb = Workbook()
                 new_ws = new_wb.active
 
                 # Копируем заголовки
-                for col, header in enumerate(ws_formulas[3], start=1):
+                for col, header in enumerate(ws[3], start=1):
                     new_ws.cell(row=1, column=col, value=header.value)
 
-                # Записываем найденную строку, используя вычисленные значения
-                for col in range(1, ws_values.max_column + 1):
-                    value = ws_values.cell(row=row_number, column=col).value
+                # Вычисляем нужные значения
+                if fact_sum_no_nds_col is not None:
+                    fact_sum_no_nds = row_data[fact_sum_no_nds_col]
+                    fact_sum = fact_sum_no_nds * 1.2 if fact_sum_no_nds else 0
+                    row_data[fact_sum_col] = fact_sum
+
+                if limit_col is not None and fact_sum_col is not None:
+                    limit = row_data[limit_col]
+                    fact_sum = row_data[fact_sum_col]
+                    overspend = max(fact_sum - limit, 0) if limit and fact_sum else 0
+                    row_data[overspend_col] = overspend
+
+                # Записываем данные
+                for col, value in enumerate(row_data, start=1):
                     new_ws.cell(row=2, column=col, value=value)
 
                 # Сохраняем файл
