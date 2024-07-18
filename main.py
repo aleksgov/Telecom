@@ -138,21 +138,30 @@ class MyApp(QtWidgets.QMainWindow):
             if not totals:
                 raise ValueError("Не удалось собрать данные для построения графика")
 
+                # Создаем список кортежей (ФИО, номер, сумма)
+            data = list(zip(fio_dict.values(), fio_dict.keys(), totals))
+
+            # Сортируем список по ФИО (первый элемент каждого кортежа)
+            data.sort(key=lambda x: x[0])
+
+            # Распаковываем отсортированные данные
+            sorted_fio, sorted_numbers, sorted_totals = zip(*data)
+
             dialog = QDialog(self)
             dialog.setWindowTitle("Гистограмма расходов")
             dialog.setGeometry(100, 100, 1800, 800)
 
             fig, ax = plt.subplots(figsize=(10, 6))
-            bars = ax.bar(range(len(fio_dict)), totals)
+            bars = ax.bar(range(len(sorted_fio)), sorted_totals)
             ax.set_xlabel("Абоненты")
             ax.set_ylabel("Итого с НДС")
             ax.set_title("Расходы по абонентам")
-            ax.set_xticks(range(len(fio_dict)))
-            ax.set_xticklabels(list(fio_dict.values()), rotation=90, ha='right')
+            ax.set_xticks(range(len(sorted_fio)))
+            ax.set_xticklabels(sorted_fio, rotation=90, ha='right')
 
             # Добавление линии лимита
-            for i, (fio_number, total) in enumerate(zip(fio_dict.keys(), totals)):
-                limit = limit_dict.get(fio_number.split()[0], 0)
+            for i, (fio, number, total) in enumerate(zip(sorted_fio, sorted_numbers, sorted_totals)):
+                limit = limit_dict.get(number.split()[0], 0)
                 ax.plot([i - 0.4, i + 0.4], [limit, limit], color='#B0333A', linestyle='--', linewidth=2)
 
                 if total > limit:
@@ -639,17 +648,15 @@ class MyApp(QtWidgets.QMainWindow):
                 show_custom_message_box(self, "Ошибка", "Столбец с ФИО не найден в файле ОБЩИЙ_ОТЧЕТ.xlsx")
                 return
 
-            row_data = None
+            matching_rows = []
             for row in ws.iter_rows(min_row=4, values_only=True):
                 if row[fio_col] and row[fio_col].strip().lower() == input_fio.lower():
-                    row_data = list(row[:7])
-                    break
+                    matching_rows.append(list(row[:7]))
 
-            if row_data:
+            if matching_rows:
                 new_wb = Workbook()
                 new_ws = new_wb.active
                 new_ws.row_dimensions[1].height = 25
-                new_ws.row_dimensions[2].height = 20
 
                 column_widths = [20, 40, 30, 25, 30, 30, 20]
 
@@ -658,24 +665,27 @@ class MyApp(QtWidgets.QMainWindow):
                     apply_style(new_ws, cell.coordinate, is_title=True)
                     new_ws.column_dimensions[cell.column_letter].width = column_widths[col - 1]
 
-                if fact_sum_no_nds_col is not None and fact_sum_no_nds_col < 7:
-                    fact_sum_no_nds = row_data[fact_sum_no_nds_col]
-                    fact_sum = fact_sum_no_nds * 1.2 if fact_sum_no_nds else 0
-                    if fact_sum_col is not None and fact_sum_col < 7:
-                        row_data[fact_sum_col] = fact_sum
+                for row_index, row_data in enumerate(matching_rows, start=2):
+                    new_ws.row_dimensions[row_index].height = 20
 
-                if limit_col is not None and limit_col < 7 and fact_sum_col is not None and fact_sum_col < 7:
-                    limit = row_data[limit_col]
-                    fact_sum = row_data[fact_sum_col]
-                    overspend = max(fact_sum - limit, 0) if limit and fact_sum else 0
-                    if overspend_col is not None and overspend_col < 7:
-                        row_data[overspend_col] = overspend
+                    if fact_sum_no_nds_col is not None and fact_sum_no_nds_col < 7:
+                        fact_sum_no_nds = row_data[fact_sum_no_nds_col]
+                        fact_sum = fact_sum_no_nds * 1.2 if fact_sum_no_nds else 0
+                        if fact_sum_col is not None and fact_sum_col < 7:
+                            row_data[fact_sum_col] = fact_sum
 
-                for col, value in enumerate(row_data, start=1):
-                    cell_ref = new_ws.cell(row=2, column=col, value=value)
-                    apply_style(new_ws, cell_ref.coordinate, is_title=False)
+                    if limit_col is not None and limit_col < 7 and fact_sum_col is not None and fact_sum_col < 7:
+                        limit = row_data[limit_col]
+                        fact_sum = row_data[fact_sum_col]
+                        overspend = max(fact_sum - limit, 0) if limit and fact_sum else 0
+                        if overspend_col is not None and overspend_col < 7:
+                            row_data[overspend_col] = overspend
 
-                set_borders(new_ws, start_col=1, end_col=7, start_row=1, end_row=2)
+                    for col, value in enumerate(row_data, start=1):
+                        cell_ref = new_ws.cell(row=row_index, column=col, value=value)
+                        apply_style(new_ws, cell_ref.coordinate, is_title=False)
+
+                set_borders(new_ws, start_col=1, end_col=7, start_row=1, end_row=len(matching_rows) + 1)
 
                 file_name = f"{input_fio}_отчет.xlsx"
                 new_wb.save(file_name)
