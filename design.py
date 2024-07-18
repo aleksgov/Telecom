@@ -352,6 +352,6 @@ class Ui_MainWindow(object):
         self.CommonLabel.setText(_translate("MainWindow", "ОБЩИЙ"))
         self.IndividualLabel.setText(_translate("MainWindow", "ИНДИВИДУАЛЬНЫЙ"))
         self.diagramButton2.setText(_translate("MainWindow", "ДИАГРАММА"))
-        self.lineEdit.setText(_translate("MainWindow", "ИВАНОВ ИВАН ИВАНОВИЧ"))
+        self.lineEdit.setPlaceholderText(_translate("MainWindow", "Введите ФИО"))
         self.changeButton.setText(_translate("MainWindow", "ДОБАВИТЬ/ИЗМЕНИТЬ СПИСОК РАБОТНИКОВ"))
         self.fileLabel.setText(_translate("MainWindow", "ЗАГРУЗИТЕ ФАЙЛ"))

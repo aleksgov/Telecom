@@ -74,26 +74,19 @@ class MyApp(QtWidgets.QMainWindow):
         self.ui.fileButton2.clicked.connect(self.display_line_edit_text)
         self.ui.fileButton3.clicked.connect(self.load_file)
         self.ui.diagramButton1.clicked.connect(self.create_histogram)
-
-        self.ui.lineEdit.setPlaceholderText("ИВАНОВ ИВАН ИВАНОВИЧ")
-        self.ui.lineEdit.setText("")
-        self.ui.lineEdit.focusInEvent = self.lineEditFocusIn
-        self.ui.lineEdit.focusOutEvent = self.lineEditFocusOut
+        self.ui.lineEdit.returnPressed.connect(self.display_line_edit_text)
+        self.ui.lineEdit.textChanged.connect(self.on_text_changed)
 
         # Пути к файлам Excel
         self.excel_file = "Работники.xlsx"
         self.custom_excel_file = "ОБЩИЙ_ОТЧЕТ.xlsx"
         self.report_excel_file = "ОТЧЕТ_ТЕЛЕКОМ.xlsx"
 
-    def lineEditFocusIn(self, event):
-        if self.ui.lineEdit.text() == "ИВАНОВ ИВАН ИВАНОВИЧ":
-            self.ui.lineEdit.setText("")
-        super(QtWidgets.QLineEdit, self.ui.lineEdit).focusInEvent(event)
-
-    def lineEditFocusOut(self, event):
-        if self.ui.lineEdit.text() == "":
-            self.ui.lineEdit.setText("ИВАНОВ ИВАН ИВАНОВИЧ")
-        super(QtWidgets.QLineEdit, self.ui.lineEdit).focusOutEvent(event)
+    def on_text_changed(self):
+        if self.ui.lineEdit.text():
+            self.ui.lineEdit.setStyleSheet("color: black;")
+        else:
+            self.ui.lineEdit.setStyleSheet("color: rgb(146,146,146);")
 
     def create_histogram(self):
         try:
@@ -237,7 +230,6 @@ class MyApp(QtWidgets.QMainWindow):
                     self.convert_csv_to_excel(file_name)
                 elif file_name.endswith(('.xlsx', '.xls')):
                     wb = load_workbook(file_name)
-                    ws = wb.active
                     print(f"Открыт Excel файл, листов: {len(wb.sheetnames)}")
             except Exception as e:
                 print(f"Ошибка при обработке файла: {e}")
@@ -372,7 +364,7 @@ class MyApp(QtWidgets.QMainWindow):
                 ["Номер телефона", "ФИО", "Должность", "Сумма лимита руб. с НДС",
                  "Фактическая сумма Руб. с НДС", "Фактическая сумма Руб.без НДС",
                  "Перерасход", "Счет затрат", "Тариф", "Счет 20 с НДС", "Счет 20 без НДС",
-                 "Счет 26 С НДС", "Счет 26 без НДС" ]
+                 "Счет 26 С НДС", "Счет 26 без НДС"]
             ]
 
             all_border = Border(
@@ -608,19 +600,23 @@ class MyApp(QtWidgets.QMainWindow):
     def display_line_edit_text(self):
         input_fio = self.ui.lineEdit.text().strip()
 
-        if not input_fio or input_fio == "ИВАНОВ ИВАН ИВАНОВИЧ":
+        if not input_fio or input_fio == "Введите ФИО":
             show_custom_message_box(self, "Информация", "Пустой запрос")
             return
 
         file_path = "ОБЩИЙ_ОТЧЕТ.xlsx"
 
         try:
-            wb = load_workbook(file_path)
-            ws = wb["Подробный отчет"]
+            # Загружаем файл дважды: один раз с формулами, другой раз только со значениями
+            wb_formulas = load_workbook(file_path)
+            wb_values = load_workbook(file_path, data_only=True)
+
+            ws_formulas = wb_formulas["Подробный отчет"]
+            ws_values = wb_values["Подробный отчет"]
 
             # Находим столбец с ФИО (ищем в третьей строке)
             fio_column = None
-            for cell in ws[3]:
+            for cell in ws_formulas[3]:
                 if cell.value and 'фио' in str(cell.value).lower():
                     fio_column = cell.column
                     break
@@ -629,32 +625,33 @@ class MyApp(QtWidgets.QMainWindow):
                 show_custom_message_box(self, "Ошибка", "Столбец с ФИО не найден в файле ОБЩИЙ_ОТЧЕТ.xlsx")
                 return
 
-            print(f"Найден столбец ФИО: {ws.cell(row=3, column=fio_column).value}")
+            print(f"Найден столбец ФИО: {ws_formulas.cell(row=3, column=fio_column).value}")
 
-            # Ищем соответствующее ФИО и сохраняем всю строку
+            # Ищем соответствующее ФИО и сохраняем номер строки
             fio_found = False
-            row_data = None
-            for row in ws.iter_rows(min_row=4, values_only=True):
-                if row[fio_column - 1] and row[fio_column - 1].strip().lower() == input_fio.lower():
+            row_number = None
+            for row in ws_formulas.iter_rows(min_row=4):
+                if row[fio_column - 1].value and row[fio_column - 1].value.strip().lower() == input_fio.lower():
                     fio_found = True
-                    row_data = row
+                    row_number = row[0].row
                     break
 
-            if fio_found and row_data:
+            if fio_found and row_number:
                 # Создаем новый файл Excel
                 new_wb = Workbook()
                 new_ws = new_wb.active
 
                 # Копируем заголовки
-                for col, header in enumerate(ws[3], start=1):
+                for col, header in enumerate(ws_formulas[3], start=1):
                     new_ws.cell(row=1, column=col, value=header.value)
 
-                # Записываем найденную строку
-                for col, value in enumerate(row_data, start=1):
+                # Записываем найденную строку, используя вычисленные значения
+                for col in range(1, ws_values.max_column + 1):
+                    value = ws_values.cell(row=row_number, column=col).value
                     new_ws.cell(row=2, column=col, value=value)
 
                 # Сохраняем файл
-                file_name = "Индивидуальный_отчет.xlsx"
+                file_name = f"{input_fio}_отчет.xlsx"
                 new_wb.save(file_name)
                 show_custom_message_box(self, "Информация", f"Файл {file_name} создан успешно. Данные записаны.")
 
@@ -667,7 +664,6 @@ class MyApp(QtWidgets.QMainWindow):
             show_custom_message_box(self, "Ошибка", "Файл ОБЩИЙ_ОТЧЕТ.xlsx не найден")
         except Exception as e:
             show_custom_message_box(self, "Ошибка", f"Произошла ошибка: {str(e)}")
-
 
 if __name__ == "__main__":
     app = QtWidgets.QApplication(sys.argv)
