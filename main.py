@@ -600,6 +600,24 @@ class MyApp(QtWidgets.QMainWindow):
     def display_line_edit_text(self):
         input_fio = self.ui.lineEdit.text().strip()
 
+        def apply_style(ws, cell, font_name='Arial Cyr', font_size=9, is_title=True):
+            ws[cell].alignment = Alignment(horizontal='center', vertical='center', wrap_text=True)
+            ws[cell].font = Font(name=font_name, size=font_size)
+            if not is_title:
+                ws[cell].font = Font(name='Liberation Serif', size=12)
+
+        def set_borders(ws, start_col, end_col, start_row, end_row):
+            border = Border(
+                left=Side(border_style="thin", color="000000"),
+                right=Side(border_style="thin", color="000000"),
+                top=Side(border_style="thin", color="000000"),
+                bottom=Side(border_style="thin", color="000000")
+            )
+            for col in range(start_col, end_col + 1):
+                for row in range(start_row, end_row + 1):
+                    cell = f"{get_column_letter(col)}{row}"
+                    ws[cell].border = border
+
         if not input_fio or input_fio == "Введите ФИО":
             show_custom_message_box(self, "Информация", "Пустой запрос")
             return
@@ -610,7 +628,6 @@ class MyApp(QtWidgets.QMainWindow):
             wb = load_workbook(file_path, data_only=True)
             ws = wb["Подробный отчет"]
 
-            # Находим нужные столбцы
             headers = {cell.value: idx for idx, cell in enumerate(ws[3]) if cell.value}
             fio_col = headers.get('ФИО')
             limit_col = headers.get('Сумма лимита руб. с НДС')
@@ -622,46 +639,47 @@ class MyApp(QtWidgets.QMainWindow):
                 show_custom_message_box(self, "Ошибка", "Столбец с ФИО не найден в файле ОБЩИЙ_ОТЧЕТ.xlsx")
                 return
 
-            # Ищем соответствующее ФИО и сохраняем всю строку
-            fio_found = False
             row_data = None
             for row in ws.iter_rows(min_row=4, values_only=True):
                 if row[fio_col] and row[fio_col].strip().lower() == input_fio.lower():
-                    fio_found = True
-                    row_data = list(row)
+                    row_data = list(row[:7])
                     break
 
-            if fio_found and row_data:
-                # Создаем новый файл Excel
+            if row_data:
                 new_wb = Workbook()
                 new_ws = new_wb.active
+                new_ws.row_dimensions[1].height = 25
+                new_ws.row_dimensions[2].height = 20
 
-                # Копируем заголовки
-                for col, header in enumerate(ws[3], start=1):
-                    new_ws.cell(row=1, column=col, value=header.value)
+                column_widths = [20, 40, 30, 25, 30, 30, 20]
 
-                # Вычисляем нужные значения
-                if fact_sum_no_nds_col is not None:
+                for col, header in enumerate(ws[3][:7], start=1):
+                    cell = new_ws.cell(row=1, column=col, value=header.value)
+                    apply_style(new_ws, cell.coordinate, is_title=True)
+                    new_ws.column_dimensions[cell.column_letter].width = column_widths[col - 1]
+
+                if fact_sum_no_nds_col is not None and fact_sum_no_nds_col < 7:
                     fact_sum_no_nds = row_data[fact_sum_no_nds_col]
                     fact_sum = fact_sum_no_nds * 1.2 if fact_sum_no_nds else 0
-                    row_data[fact_sum_col] = fact_sum
+                    if fact_sum_col is not None and fact_sum_col < 7:
+                        row_data[fact_sum_col] = fact_sum
 
-                if limit_col is not None and fact_sum_col is not None:
+                if limit_col is not None and limit_col < 7 and fact_sum_col is not None and fact_sum_col < 7:
                     limit = row_data[limit_col]
                     fact_sum = row_data[fact_sum_col]
                     overspend = max(fact_sum - limit, 0) if limit and fact_sum else 0
-                    row_data[overspend_col] = overspend
+                    if overspend_col is not None and overspend_col < 7:
+                        row_data[overspend_col] = overspend
 
-                # Записываем данные
                 for col, value in enumerate(row_data, start=1):
-                    new_ws.cell(row=2, column=col, value=value)
+                    cell_ref = new_ws.cell(row=2, column=col, value=value)
+                    apply_style(new_ws, cell_ref.coordinate, is_title=False)
 
-                # Сохраняем файл
+                set_borders(new_ws, start_col=1, end_col=7, start_row=1, end_row=2)
+
                 file_name = f"{input_fio}_отчет.xlsx"
                 new_wb.save(file_name)
                 show_custom_message_box(self, "Информация", f"Файл {file_name} создан успешно. Данные записаны.")
-
-                # Открываем созданный файл
                 self.open_excel_file(file_name)
             else:
                 show_custom_message_box(self, "Информация", "ФИО не найдено")
@@ -670,6 +688,7 @@ class MyApp(QtWidgets.QMainWindow):
             show_custom_message_box(self, "Ошибка", "Файл ОБЩИЙ_ОТЧЕТ.xlsx не найден")
         except Exception as e:
             show_custom_message_box(self, "Ошибка", f"Произошла ошибка: {str(e)}")
+
 
 if __name__ == "__main__":
     app = QtWidgets.QApplication(sys.argv)
