@@ -89,6 +89,7 @@ class MyApp(QtWidgets.QMainWindow):
         self.excel_file = "Работники.xlsx"
         self.custom_excel_file = None
         self.report_excel_file = "ОТЧЕТ_ТЕЛЕКОМ.xlsx"
+        self.report_date = None
 
     def on_text_changed(self):
         if self.ui.lineEdit.text():
@@ -317,9 +318,12 @@ class MyApp(QtWidgets.QMainWindow):
                 try:
                     start_date = datetime.strptime(start_period, "%d.%m.%Y")
                     month_year = start_date.strftime("%m.%y")
+
                 except ValueError:
                     month_year = "unknown"
 
+            self.report_date = month_year
+            print(self.report_date)
             # Создаем название файла с датой
             file_name = f"ОБЩИЙ_ОТЧЕТ_{month_year}.xlsx"
             output_file = os.path.join(self.reports_folder, file_name)
@@ -722,7 +726,7 @@ class MyApp(QtWidgets.QMainWindow):
 
                 set_borders(new_ws, start_col=1, end_col=7, start_row=1, end_row=len(matching_rows) + 1)
 
-                file_name = f"Индивидуальные_отчеты'\'{input_fio}_отчет.xlsx"
+                file_name = f"Индивидуальные_отчеты\\{input_fio}_отчет_{self.report_date}.xlsx"
                 new_wb.save(file_name)
                 show_custom_message_box(self, "Информация", f"Файл {file_name} создан успешно. Данные записаны.")
                 self.open_excel_file(file_name)
