@@ -77,9 +77,13 @@ class MyApp(QtWidgets.QMainWindow):
         self.ui.lineEdit.returnPressed.connect(self.display_line_edit_text)
         self.ui.lineEdit.textChanged.connect(self.on_text_changed)
 
+        self.reports_folder = "Общие_отчеты"
+        if not os.path.exists(self.reports_folder):
+            os.makedirs(self.reports_folder)
+
         # Пути к файлам Excel
         self.excel_file = "Работники.xlsx"
-        self.custom_excel_file = "ОБЩИЙ_ОТЧЕТ.xlsx"
+        self.custom_excel_file = None
         self.report_excel_file = "ОТЧЕТ_ТЕЛЕКОМ.xlsx"
 
     def on_text_changed(self):
@@ -282,13 +286,40 @@ class MyApp(QtWidgets.QMainWindow):
 
     def create_custom_excel(self):
         try:
+            workers_wb = load_workbook('Работники.xlsx', data_only=True)
+            workers_ws = workers_wb.active
+
             # Загружаем данные из файла ОТЧЕТ_ТЕЛЕКОМ.xlsx
             report_wb = load_workbook(self.report_excel_file, data_only=True)
             report_ws = report_wb.active
 
-            # Загружаем данные из файла Работники.xlsx
-            workers_wb = load_workbook('Работники.xlsx', data_only=True)
-            workers_ws = workers_wb.active
+            # Определяем столбец с "Начало периода"
+            start_period_col = None
+            for col in range(1, report_ws.max_column + 1):
+                header = report_ws.cell(row=1, column=col).value
+                if header == "Начало периода":
+                    start_period_col = col
+                    break
+
+            if not start_period_col:
+                raise ValueError("Не удалось найти столбец 'Начало периода' в файле")
+
+            # Извлекаем дату начала периода
+            start_period = report_ws.cell(row=2, column=start_period_col).value
+            if isinstance(start_period, datetime):
+                month_year = start_period.strftime("%m.%y")
+            else:
+                # Попробуем обработать строку с датой
+                try:
+                    start_date = datetime.strptime(start_period, "%d.%m.%Y")
+                    month_year = start_date.strftime("%m.%y")
+                except ValueError:
+                    month_year = "unknown"
+
+            # Создаем название файла с датой
+            file_name = f"ОБЩИЙ_ОТЧЕТ_{month_year}.xlsx"
+            output_file = os.path.join(self.reports_folder, file_name)
+            self.custom_excel_file = output_file
 
             # Создаем новый файл ОБЩИЙ_ОТЧЕТ.xlsx
             wb = Workbook()
@@ -598,9 +629,9 @@ class MyApp(QtWidgets.QMainWindow):
                     regular_style(second_ws, cell.coordinate)
 
             # Сохранение файла
-            wb.save(self.custom_excel_file)
-            show_custom_message_box(self, "Информация", f"Создан новый файл {self.custom_excel_file}")
-            self.open_excel_file(self.custom_excel_file)
+            wb.save(output_file)
+            show_custom_message_box(self, "Информация", f"Создан новый файл {file_name}")
+            self.open_excel_file(output_file)
 
         except Exception as e:
             print(f"Ошибка при создании общего отчета: {e}")
@@ -631,7 +662,7 @@ class MyApp(QtWidgets.QMainWindow):
             show_custom_message_box(self, "Информация", "Пустой запрос")
             return
 
-        file_path = "ОБЩИЙ_ОТЧЕТ.xlsx"
+        file_path = self.custom_excel_file
 
         try:
             wb = load_workbook(file_path, data_only=True)
@@ -697,7 +728,7 @@ class MyApp(QtWidgets.QMainWindow):
         except FileNotFoundError:
             show_custom_message_box(self, "Ошибка", "Файл ОБЩИЙ_ОТЧЕТ.xlsx не найден")
         except Exception as e:
-            show_custom_message_box(self, "Ошибка", f"Произошла ошибка: {str(e)}")
+            show_custom_message_box(self, "Ошибка", f"Произошла ошибка: Закройте все таблицы и сформируйте общий отчет!")
 
 
 if __name__ == "__main__":
