@@ -77,6 +77,10 @@ class MyApp(QtWidgets.QMainWindow):
         self.ui.lineEdit.returnPressed.connect(self.display_line_edit_text)
         self.ui.lineEdit.textChanged.connect(self.on_text_changed)
 
+        self.reports_folder = "Индивидуальные_отчеты"
+        if not os.path.exists(self.reports_folder):
+            os.makedirs(self.reports_folder)
+
         self.reports_folder = "Общие_отчеты"
         if not os.path.exists(self.reports_folder):
             os.makedirs(self.reports_folder)
@@ -718,7 +722,7 @@ class MyApp(QtWidgets.QMainWindow):
 
                 set_borders(new_ws, start_col=1, end_col=7, start_row=1, end_row=len(matching_rows) + 1)
 
-                file_name = f"{input_fio}_отчет.xlsx"
+                file_name = f"Индивидуальные_отчеты'\'{input_fio}_отчет.xlsx"
                 new_wb.save(file_name)
                 show_custom_message_box(self, "Информация", f"Файл {file_name} создан успешно. Данные записаны.")
                 self.open_excel_file(file_name)
