@@ -697,36 +697,39 @@ class MyApp(QtWidgets.QMainWindow):
                 new_ws = new_wb.active
                 new_ws.row_dimensions[1].height = 25
 
-                column_widths = [20, 40, 30, 25, 30, 30, 20]
+                # Новые заголовки с добавленным столбцом "Дата"
+                new_headers = list(ws[3][:3]) + ["Дата"] + list(ws[3][3:7])
+                column_widths = [20, 40, 30, 25, 30, 30, 20, 20]  # Добавьте ширину для нового столбца
 
-                for col, header in enumerate(ws[3][:7], start=1):
-                    cell = new_ws.cell(row=1, column=col, value=header.value)
+                for col, header in enumerate(new_headers, start=1):
+                    cell = new_ws.cell(row=1, column=col, value=header if isinstance(header, str) else header.value)
                     apply_style(new_ws, cell.coordinate, is_title=True)
                     new_ws.column_dimensions[cell.column_letter].width = column_widths[col - 1]
 
                 for row_index, row_data in enumerate(matching_rows, start=2):
                     new_ws.row_dimensions[row_index].height = 20
+                    new_row_data = row_data[:3] + [self.report_date] + row_data[3:7]  # Вставляем значение для "Дата"
 
                     if fact_sum_no_nds_col is not None and fact_sum_no_nds_col < 7:
-                        fact_sum_no_nds = row_data[fact_sum_no_nds_col]
+                        fact_sum_no_nds = new_row_data[fact_sum_no_nds_col + 1]
                         fact_sum = fact_sum_no_nds * 1.2 if fact_sum_no_nds else 0
                         if fact_sum_col is not None and fact_sum_col < 7:
-                            row_data[fact_sum_col] = fact_sum
+                            new_row_data[fact_sum_col + 1] = fact_sum
 
                     if limit_col is not None and limit_col < 7 and fact_sum_col is not None and fact_sum_col < 7:
-                        limit = row_data[limit_col]
-                        fact_sum = row_data[fact_sum_col]
+                        limit = new_row_data[limit_col + 1]
+                        fact_sum = new_row_data[fact_sum_col + 1]
                         overspend = max(fact_sum - limit, 0) if limit and fact_sum else 0
                         if overspend_col is not None and overspend_col < 7:
-                            row_data[overspend_col] = overspend
+                            new_row_data[overspend_col + 1] = overspend
 
-                    for col, value in enumerate(row_data, start=1):
+                    for col, value in enumerate(new_row_data, start=1):
                         cell_ref = new_ws.cell(row=row_index, column=col, value=value)
                         apply_style(new_ws, cell_ref.coordinate, is_title=False)
 
-                set_borders(new_ws, start_col=1, end_col=7, start_row=1, end_row=len(matching_rows) + 1)
+                set_borders(new_ws, start_col=1, end_col=8, start_row=1, end_row=len(matching_rows) + 1)
 
-                file_name = f"Индивидуальные_отчеты\\{input_fio}_отчет_{self.report_date}.xlsx"
+                file_name = f"Индивидуальные_отчеты\\{input_fio}_отчет.xlsx"
                 new_wb.save(file_name)
                 show_custom_message_box(self, "Информация", f"Файл {file_name} создан успешно. Данные записаны.")
                 self.open_excel_file(file_name)
@@ -736,7 +739,8 @@ class MyApp(QtWidgets.QMainWindow):
         except FileNotFoundError:
             show_custom_message_box(self, "Ошибка", "Файл ОБЩИЙ_ОТЧЕТ.xlsx не найден")
         except Exception as e:
-            show_custom_message_box(self, "Ошибка", f"Произошла ошибка: Закройте все таблицы и сформируйте общий отчет!")
+            show_custom_message_box(self, "Ошибка",
+                                    f"Произошла ошибка: Закройте все таблицы и сформируйте общий отчет!")
 
 
 if __name__ == "__main__":
