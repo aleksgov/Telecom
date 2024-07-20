@@ -2,11 +2,13 @@ import os
 import csv
 import chardet
 import sys
+import re
 from datetime import datetime
 from PyQt5 import QtWidgets
 from PyQt5.QtWidgets import QFileDialog, QMessageBox
 from openpyxl import Workbook, load_workbook
 from openpyxl.utils import get_column_letter
+from openpyxl.cell.cell import Cell
 from design import Ui_MainWindow
 from openpyxl.styles import Alignment, Font, NamedStyle, Border, Side
 from PyQt5.QtGui import QFont, QIcon
@@ -648,6 +650,12 @@ class MyApp(QtWidgets.QMainWindow):
     def display_line_edit_text(self):
         input_fio = self.ui.lineEdit.text().strip()
 
+        def extract_month_year(filename):
+            match = re.search(r'ОБЩИЙ_ОТЧЕТ_(\d{2})\.(\d{2})\.xlsx', filename)
+            if match:
+                return f"{match.group(1)}.{match.group(2)}"
+            return None
+
         def apply_style(ws, cell, font_name='Arial Cyr', font_size=9, is_title=True):
             ws[cell].alignment = Alignment(horizontal='center', vertical='center', wrap_text=True)
             ws[cell].font = Font(name=font_name, size=font_size)
@@ -670,77 +678,84 @@ class MyApp(QtWidgets.QMainWindow):
             show_custom_message_box(self, "Информация", "Пустой запрос")
             return
 
-        file_path = self.custom_excel_file
+        reports_folder = "Общие_отчеты"
+        matching_rows = []
 
         try:
-            wb = load_workbook(file_path, data_only=True)
-            ws = wb["Подробный отчет"]
+            for filename in os.listdir(reports_folder):
+                if filename.startswith("ОБЩИЙ_ОТЧЕТ_") and filename.endswith(".xlsx"):
+                    file_path = os.path.join(reports_folder, filename)
+                    month_year = extract_month_year(filename)
 
-            headers = {cell.value: idx for idx, cell in enumerate(ws[3]) if cell.value}
-            fio_col = headers.get('ФИО')
-            limit_col = headers.get('Сумма лимита руб. с НДС')
-            fact_sum_col = headers.get('Фактическая сумма Руб. с НДС')
-            fact_sum_no_nds_col = headers.get('Фактическая сумма Руб.без НДС')
-            overspend_col = headers.get('Перерасход')
+                    wb = load_workbook(file_path, data_only=True)
+                    ws = wb["Подробный отчет"]
 
-            if fio_col is None:
-                show_custom_message_box(self, "Ошибка", "Столбец с ФИО не найден в файле ОБЩИЙ_ОТЧЕТ.xlsx")
-                return
+                    headers = {cell.value: idx for idx, cell in enumerate(ws[3]) if cell.value}
+                    fio_col = headers.get('ФИО')
+                    limit_col = headers.get('Сумма лимита руб. с НДС')
+                    fact_sum_no_nds_col = headers.get('Фактическая сумма Руб.без НДС')
 
-            matching_rows = []
-            for row in ws.iter_rows(min_row=4, values_only=True):
-                if row[fio_col] and row[fio_col].strip().lower() == input_fio.lower():
-                    matching_rows.append(list(row[:7]))
+                    if fio_col is None or limit_col is None or fact_sum_no_nds_col is None:
+                        show_custom_message_box(self, "Ошибка",
+                                                f"Не найдены все необходимые столбцы в файле {filename}")
+                        continue
+
+                    for row in ws.iter_rows(min_row=4, values_only=True):
+                        if row[fio_col] and row[fio_col].strip().lower() == input_fio.lower():
+                            fact_sum_no_nds = row[fact_sum_no_nds_col] or 0
+                            fact_sum_with_nds = fact_sum_no_nds * 1.2
+                            limit = row[limit_col] or 0
+                            overspend = max(fact_sum_with_nds - limit, 0)
+
+                            new_row = list(row[:fio_col]) + list(row[fio_col + 1:fact_sum_no_nds_col - 1]) + [
+                                fact_sum_with_nds, fact_sum_no_nds, overspend, month_year]
+                            matching_rows.append(new_row)
 
             if matching_rows:
                 new_wb = Workbook()
                 new_ws = new_wb.active
                 new_ws.row_dimensions[1].height = 25
 
-                # Новые заголовки с добавленным столбцом "Дата"
-                new_headers = list(ws[3][:3]) + ["Дата"] + list(ws[3][3:7])
-                column_widths = [20, 40, 30, 25, 30, 30, 20, 20]  # Добавьте ширину для нового столбца
+                column_widths = [20, 30, 25, 30, 30, 20, 15]
 
-                for col, header in enumerate(new_headers, start=1):
-                    cell = new_ws.cell(row=1, column=col, value=header if isinstance(header, str) else header.value)
+                headers = ["Номер телефона", "Должность", "Сумма лимита руб. с НДС",
+                           "Фактическая сумма Руб.без НДС", "Фактическая сумма Руб. с НДС",
+                           "Перерасход", "Дата"]
+
+                # Insert FIO at the top
+                new_ws.insert_rows(1)
+                new_ws.merge_cells(start_row=1, start_column=1, end_row=1, end_column=len(headers))
+                new_ws.cell(row=1, column=1, value=f"{input_fio}").alignment = Alignment(horizontal='center',
+                                                                                              vertical='center')
+                new_ws.row_dimensions[1].height = 30
+                new_ws['A1'].font = Font(name='Arial Cyr', size=14, bold=True)
+
+                # Apply headers starting from the second row
+                for col, header in enumerate(headers, start=1):
+                    cell = new_ws.cell(row=2, column=col, value=header)
                     apply_style(new_ws, cell.coordinate, is_title=True)
                     new_ws.column_dimensions[cell.column_letter].width = column_widths[col - 1]
 
-                for row_index, row_data in enumerate(matching_rows, start=2):
+                # Apply data rows starting from the third row
+                for row_index, row_data in enumerate(matching_rows, start=3):
                     new_ws.row_dimensions[row_index].height = 20
-                    new_row_data = row_data[:3] + [self.report_date] + row_data[3:7]  # Вставляем значение для "Дата"
-
-                    if fact_sum_no_nds_col is not None and fact_sum_no_nds_col < 7:
-                        fact_sum_no_nds = new_row_data[fact_sum_no_nds_col + 1]
-                        fact_sum = fact_sum_no_nds * 1.2 if fact_sum_no_nds else 0
-                        if fact_sum_col is not None and fact_sum_col < 7:
-                            new_row_data[fact_sum_col + 1] = fact_sum
-
-                    if limit_col is not None and limit_col < 7 and fact_sum_col is not None and fact_sum_col < 7:
-                        limit = new_row_data[limit_col + 1]
-                        fact_sum = new_row_data[fact_sum_col + 1]
-                        overspend = max(fact_sum - limit, 0) if limit and fact_sum else 0
-                        if overspend_col is not None and overspend_col < 7:
-                            new_row_data[overspend_col + 1] = overspend
-
-                    for col, value in enumerate(new_row_data, start=1):
+                    for col, value in enumerate(row_data, start=1):
                         cell_ref = new_ws.cell(row=row_index, column=col, value=value)
                         apply_style(new_ws, cell_ref.coordinate, is_title=False)
+                        if col in [3, 4, 5, 6]:  # For numeric columns
+                            cell_ref.number_format = '#,##0.00'
 
-                set_borders(new_ws, start_col=1, end_col=8, start_row=1, end_row=len(matching_rows) + 1)
+                set_borders(new_ws, start_col=1, end_col=7, start_row=2, end_row=len(matching_rows) + 2)
 
                 file_name = f"Индивидуальные_отчеты\\{input_fio}_отчет.xlsx"
                 new_wb.save(file_name)
                 show_custom_message_box(self, "Информация", f"Файл {file_name} создан успешно. Данные записаны.")
                 self.open_excel_file(file_name)
             else:
-                show_custom_message_box(self, "Информация", "ФИО не найдено")
+                show_custom_message_box(self, "Информация", "ФИО не найдено ни в одном из отчетов")
 
-        except FileNotFoundError:
-            show_custom_message_box(self, "Ошибка", "Файл ОБЩИЙ_ОТЧЕТ.xlsx не найден")
         except Exception as e:
-            show_custom_message_box(self, "Ошибка",
-                                    f"Произошла ошибка: Закройте все таблицы и сформируйте общий отчет!")
+            show_custom_message_box(self, "Ошибка", f"Произошла ошибка: {str(e)}")
 
 
 if __name__ == "__main__":
