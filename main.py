@@ -16,7 +16,10 @@ from PyQt5.QtCore import Qt
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 from PyQt5.QtWidgets import QVBoxLayout, QDialog
+import ctypes
 
+myappid = 'Telecom'
+ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(myappid)
 
 def show_custom_message_box(parent, title, message, icon_path=None):
     msg_box = QMessageBox(parent)
@@ -69,6 +72,8 @@ class MyApp(QtWidgets.QMainWindow):
 
         self.ui = Ui_MainWindow()
         self.ui.setupUi(self)
+        self.setWindowTitle("Telecom")
+        self.setWindowIcon(QIcon('telecom.ico'))
 
         # Подключаем кнопки к функциям
         self.ui.changeButton.clicked.connect(self.manage_employees)
@@ -489,7 +494,7 @@ class MyApp(QtWidgets.QMainWindow):
             header_style(second_ws, 'A2')
 
             # Применяем title style к ячейкам A3-M3
-            for col in range(1, 14):  # A-J -> 1-10
+            for col in range(1, 14):
                 cell = second_ws.cell(row=3, column=col)
                 title_style(second_ws, cell.coordinate)
 
@@ -517,9 +522,7 @@ class MyApp(QtWidgets.QMainWindow):
                 excel_width = width / 7  # Преобразуем пиксели в "экселевские" единицы
                 second_ws.column_dimensions[get_column_letter(i)].width = excel_width
 
-            # Настройка высоты строки
             second_ws.row_dimensions[3].height = 38
-
             phone_style = NamedStyle(name="phone_style")
             phone_style.number_format = '[<=9999999]###-####;(###) #-##-##'
             phone_style.alignment = Alignment(horizontal="left")
@@ -631,7 +634,7 @@ class MyApp(QtWidgets.QMainWindow):
             # Обновляем применение стилей и границ
             for row in second_ws.iter_rows(min_row=3, min_col=1, max_row=result_row, max_col=13):
                 for cell in row:
-                    if not (cell.row == 3 and 10 <= cell.column <= 13):  # Исключаем J3-M3
+                    if not (cell.row == 3 and 10 <= cell.column <= 13):
                         cell.border = all_border
 
             for row in second_ws.iter_rows(min_row=4, max_row=last_row - 1, min_col=1, max_col=9):
@@ -722,7 +725,6 @@ class MyApp(QtWidgets.QMainWindow):
                            "Фактическая сумма Руб.без НДС", "Фактическая сумма Руб. с НДС",
                            "Перерасход", "Дата"]
 
-                # Insert FIO at the top
                 new_ws.insert_rows(1)
                 new_ws.merge_cells(start_row=1, start_column=1, end_row=1, end_column=len(headers))
                 new_ws.cell(row=1, column=1, value=f"{input_fio}").alignment = Alignment(horizontal='center',
@@ -730,13 +732,11 @@ class MyApp(QtWidgets.QMainWindow):
                 new_ws.row_dimensions[1].height = 30
                 new_ws['A1'].font = Font(name='Arial Cyr', size=14, bold=True)
 
-                # Apply headers starting from the second row
                 for col, header in enumerate(headers, start=1):
                     cell = new_ws.cell(row=2, column=col, value=header)
                     apply_style(new_ws, cell.coordinate, is_title=True)
                     new_ws.column_dimensions[cell.column_letter].width = column_widths[col - 1]
 
-                # Apply data rows starting from the third row
                 for row_index, row_data in enumerate(matching_rows, start=3):
                     new_ws.row_dimensions[row_index].height = 20
                     for col, value in enumerate(row_data, start=1):
