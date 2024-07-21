@@ -748,7 +748,7 @@ class MyApp(QtWidgets.QMainWindow):
 
             chart_dialog = QDialog(self)
             chart_dialog.setWindowTitle(f"График расходов {input_fio}")
-            chart_dialog.setGeometry(100, 100, 800, 600)
+            chart_dialog.setGeometry(100, 100, 1500, 600)
 
             combo_box = QComboBox()
             combo_box.addItems(sorted(phone_numbers))
