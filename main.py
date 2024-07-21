@@ -8,7 +8,6 @@ from PyQt5 import QtWidgets
 from PyQt5.QtWidgets import QFileDialog, QMessageBox
 from openpyxl import Workbook, load_workbook
 from openpyxl.utils import get_column_letter
-from openpyxl.cell.cell import Cell
 from design import Ui_MainWindow
 from openpyxl.styles import Alignment, Font, NamedStyle, Border, Side
 from PyQt5.QtGui import QFont, QIcon
@@ -108,96 +107,115 @@ class MyApp(QtWidgets.QMainWindow):
 
     def create_histogram(self):
         try:
-            if not os.path.exists(self.custom_excel_file):
-                raise FileNotFoundError(f"Файл {self.custom_excel_file} не найден")
+            reports_folder = "Общие_отчеты"
+            report_files = [f for f in os.listdir(reports_folder) if
+                            f.startswith("ОБЩИЙ_ОТЧЕТ_") and f.endswith(".xlsx")]
 
-            wb = load_workbook(self.custom_excel_file, data_only=True)
-            ws = wb["Отчет"]
-
-            workers_wb = load_workbook('Работники.xlsx', data_only=True)
-            workers_ws = workers_wb.active
-
-            total_without_nds_col = None
-            for col in range(1, ws.max_column + 1):
-                header = ws.cell(row=1, column=col).value
-                if header == "Итого без НДС":
-                    total_without_nds_col = col
-                if total_without_nds_col:
-                    break
-
-            if not total_without_nds_col:
-                raise ValueError("Не удалось найти нужные столбцы в файле")
-
-            totals = []
-            fio_dict = {}
-            limit_dict = {}
-
-            for row in workers_ws.iter_rows(min_row=2, values_only=True):
-                if len(row) >= 4:
-                    fio = row[0]
-                    number = row[1]
-                    limit = row[3]
-                    if fio and number and limit:
-                        fio_dict[str(number)] = fio
-                        limit_dict[str(number)] = float(limit)
-
-            for row in range(2, ws.max_row):
-                total_without_nds = ws.cell(row=row, column=total_without_nds_col).value
-                if total_without_nds is not None:
-                    try:
-                        total_value = float(total_without_nds)
-                        total_with_nds = total_value * 1.2
-                        totals.append(total_with_nds)
-                    except ValueError:
-                        print(f"Не удалось преобразовать значение '{total_without_nds}' в число")
-
-            if not totals:
-                raise ValueError("Не удалось собрать данные для построения графика")
-
-            data = list(zip(fio_dict.values(), fio_dict.keys(), totals))
-
-            data.sort(key=lambda x: x[0])
-
-            sorted_fio, sorted_numbers, sorted_totals = zip(*data)
+            if not report_files:
+                raise FileNotFoundError("Файлы отчетов не найдены")
 
             dialog = QDialog(self)
             dialog.setWindowTitle("Гистограмма расходов")
             dialog.setGeometry(100, 100, 1800, 800)
 
-            fig, ax = plt.subplots(figsize=(10, 6))
-            bars = ax.bar(range(len(sorted_fio)), sorted_totals)
-            ax.set_xlabel("Абоненты")
-            ax.set_ylabel("Итого с НДС")
-            ax.set_title("Расходы по абонентам")
-            ax.set_xticks(range(len(sorted_fio)))
-            ax.set_xticklabels(sorted_fio, rotation=90, ha='right')
-
-            # Добавление линии лимита
-            for i, (fio, number, total) in enumerate(zip(sorted_fio, sorted_numbers, sorted_totals)):
-                limit = limit_dict.get(number.split()[0], 0)
-                ax.plot([i - 0.4, i + 0.4], [limit, limit], color='#B0333A', linestyle='--', linewidth=2)
-
-                if total > limit:
-                    bars[i].set_color('#DC7077')
-                else:
-                    bars[i].set_color('#3384B0')
-
-            for bar in bars:
-                height = bar.get_height()
-                ax.text(bar.get_x() + bar.get_width() / 2., height,
-                        f'{height:.2f}',
-                        ha='center', va='bottom', rotation=0)
-
-            ax.plot([], [], color='#B0333A', linestyle='--', linewidth=2, label='Сумма лимита с НДС')
-            ax.legend(loc='lower left', bbox_to_anchor=(-0.1, -0.15))
-
-            plt.tight_layout()
-
-            canvas = FigureCanvas(fig)
-
             layout = QVBoxLayout()
+            top_layout = QHBoxLayout()
+
+            combo_box = QComboBox()
+            combo_box.addItems(report_files)
+            combo_box.setFixedWidth(180)
+            top_layout.addWidget(combo_box)
+            top_layout.addStretch(1)
+
+            layout.addLayout(top_layout)
+
+            fig, ax = plt.subplots(figsize=(10, 6))
+            canvas = FigureCanvas(fig)
             layout.addWidget(canvas)
+
             dialog.setLayout(layout)
+
+            def update_histogram(selected_file):
+                ax.clear()
+                self.custom_excel_file = os.path.join(reports_folder, selected_file)
+
+                wb = load_workbook(self.custom_excel_file, data_only=True)
+                ws = wb["Отчет"]
+
+                workers_wb = load_workbook('Работники.xlsx', data_only=True)
+                workers_ws = workers_wb.active
+
+                total_without_nds_col = None
+                for col in range(1, ws.max_column + 1):
+                    header = ws.cell(row=1, column=col).value
+                    if header == "Итого без НДС":
+                        total_without_nds_col = col
+                    if total_without_nds_col:
+                        break
+
+                if not total_without_nds_col:
+                    raise ValueError("Не удалось найти нужные столбцы в файле")
+
+                totals = []
+                fio_dict = {}
+                limit_dict = {}
+
+                for row in workers_ws.iter_rows(min_row=2, values_only=True):
+                    if len(row) >= 4:
+                        fio = row[0]
+                        number = row[1]
+                        limit = row[3]
+                        if fio and number and limit:
+                            fio_dict[str(number)] = fio
+                            limit_dict[str(number)] = float(limit)
+
+                for row in range(2, ws.max_row):
+                    total_without_nds = ws.cell(row=row, column=total_without_nds_col).value
+                    if total_without_nds is not None:
+                        try:
+                            total_value = float(total_without_nds)
+                            total_with_nds = total_value * 1.2
+                            totals.append(total_with_nds)
+                        except ValueError:
+                            print(f"Не удалось преобразовать значение '{total_without_nds}' в число")
+
+                if not totals:
+                    raise ValueError("Не удалось собрать данные для построения графика")
+
+                data = list(zip(fio_dict.values(), fio_dict.keys(), totals))
+                data.sort(key=lambda x: x[0])
+                sorted_fio, sorted_numbers, sorted_totals = zip(*data)
+
+                bars = ax.bar(range(len(sorted_fio)), sorted_totals)
+                ax.set_xlabel("Абоненты")
+                ax.set_ylabel("Итого с НДС")
+                ax.set_title(f"Расходы по абонентам ({selected_file})")
+                ax.set_xticks(range(len(sorted_fio)))
+                ax.set_xticklabels(sorted_fio, rotation=90, ha='right')
+
+                for i, (fio, number, total) in enumerate(zip(sorted_fio, sorted_numbers, sorted_totals)):
+                    limit = limit_dict.get(number.split()[0], 0)
+                    ax.plot([i - 0.4, i + 0.4], [limit, limit], color='#B0333A', linestyle='--', linewidth=2)
+
+                    if total > limit:
+                        bars[i].set_color('#DC7077')
+                    else:
+                        bars[i].set_color('#3384B0')
+
+                for bar in bars:
+                    height = bar.get_height()
+                    ax.text(bar.get_x() + bar.get_width() / 2., height,
+                            f'{height:.2f}',
+                            ha='center', va='bottom', rotation=0)
+
+                ax.plot([], [], color='#B0333A', linestyle='--', linewidth=2, label='Сумма лимита с НДС')
+                ax.legend(loc='lower left', bbox_to_anchor=(-0.1, -0.15))
+
+                plt.tight_layout()
+                canvas.draw()
+
+            combo_box.currentTextChanged.connect(update_histogram)
+            update_histogram(report_files[0])  # Отображаем первый отчет по умолчанию
 
             dialog.exec_()
 
