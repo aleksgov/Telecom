@@ -68,42 +68,63 @@ class Ui_MainWindow(object):
 "border-radius: 2px;\n"
 "")
         self.widget_2.setObjectName("widget_2")
-        self.CommonLabel = QtWidgets.QLabel(self.widget)
-        self.CommonLabel.setGeometry(QtCore.QRect(20, 20, 300, 50))
+        self.commonButton = QtWidgets.QPushButton(self.widget)
+        self.commonButton.setGeometry(QtCore.QRect(20, 20, 300, 50))
         sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Minimum)
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
-        sizePolicy.setHeightForWidth(self.CommonLabel.sizePolicy().hasHeightForWidth())
-        self.CommonLabel.setSizePolicy(sizePolicy)
+        sizePolicy.setHeightForWidth(self.commonButton.sizePolicy().hasHeightForWidth())
+        self.commonButton.setSizePolicy(sizePolicy)
         font = QtGui.QFont()
         font.setFamily("Century Gothic")
         font.setPointSize(22)
         font.setBold(True)
         font.setWeight(75)
-        self.CommonLabel.setFont(font)
-        self.CommonLabel.setStyleSheet("background-color: rgb(91,145,250); \n"
-"color: white;\n"
-"border-radius: 7px;")
-        self.CommonLabel.setAlignment(QtCore.Qt.AlignCenter)
-        self.CommonLabel.setObjectName("CommonLabel")
-        self.IndividualLabel = QtWidgets.QLabel(self.widget)
-        self.IndividualLabel.setGeometry(QtCore.QRect(380, 20, 300, 50))
+        self.commonButton.setFont(font)
+        self.commonButton.setCursor(QtGui.QCursor(QtCore.Qt.PointingHandCursor))
+        self.commonButton.setStyleSheet("""
+            QPushButton {
+                background-color: rgb(91,145,250);
+                color: white;
+                border-radius: 7px;
+            }
+            QPushButton:hover {
+                background-color: rgb(82,130,225);
+            }
+            QPushButton:pressed {
+                background-color: rgb(91,145,250);
+            }
+        """)
+        self.commonButton.setObjectName("commonButton")
+        self.individualButton = QtWidgets.QPushButton(self.widget)
+        self.individualButton.setGeometry(QtCore.QRect(380, 20, 300, 50))
         sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Minimum)
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
-        sizePolicy.setHeightForWidth(self.IndividualLabel.sizePolicy().hasHeightForWidth())
-        self.IndividualLabel.setSizePolicy(sizePolicy)
+        sizePolicy.setHeightForWidth(self.individualButton.sizePolicy().hasHeightForWidth())
+        self.individualButton.setSizePolicy(sizePolicy)
         font = QtGui.QFont()
         font.setFamily("Century Gothic")
         font.setPointSize(22)
         font.setBold(True)
         font.setWeight(75)
-        self.IndividualLabel.setFont(font)
-        self.IndividualLabel.setStyleSheet("background-color: rgb(91,145,250); \n"
-"color: white;\n"
-"border-radius: 7px;")
-        self.IndividualLabel.setAlignment(QtCore.Qt.AlignCenter)
-        self.IndividualLabel.setObjectName("IndividualLabel")
+        self.individualButton.setFont(font)
+        self.individualButton.setObjectName("individualButton")
+
+        self.individualButton.setCursor(QtGui.QCursor(QtCore.Qt.PointingHandCursor))
+        self.individualButton.setStyleSheet("""
+            QPushButton {
+                background-color: rgb(91,145,250);
+                color: white;
+                border-radius: 7px;
+            }
+            QPushButton:hover {
+                background-color: rgb(82,130,225);
+            }
+            QPushButton:pressed {
+                background-color: rgb(91,145,250);
+            }
+        """)
         self.diagramButton2 = QtWidgets.QPushButton(self.widget)
         self.diagramButton2.setEnabled(True)
         self.diagramButton2.setGeometry(QtCore.QRect(430, 260, 200, 50))
@@ -212,26 +233,26 @@ class Ui_MainWindow(object):
 "")
         self.lineEdit.setAlignment(QtCore.Qt.AlignLeading|QtCore.Qt.AlignLeft|QtCore.Qt.AlignVCenter)
         self.lineEdit.setObjectName("lineEdit")
-        self.IndividualLabel_2 = QtWidgets.QLabel(self.widget)
-        self.IndividualLabel_2.setGeometry(QtCore.QRect(380, 90, 300, 50))
+        self.textLabel = QtWidgets.QLabel(self.widget)
+        self.textLabel.setGeometry(QtCore.QRect(380, 90, 300, 50))
         sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Minimum)
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
-        sizePolicy.setHeightForWidth(self.IndividualLabel_2.sizePolicy().hasHeightForWidth())
-        self.IndividualLabel_2.setSizePolicy(sizePolicy)
+        sizePolicy.setHeightForWidth(self.textLabel.sizePolicy().hasHeightForWidth())
+        self.textLabel.setSizePolicy(sizePolicy)
         font = QtGui.QFont()
         font.setFamily("Century Gothic")
         font.setPointSize(22)
         font.setBold(True)
         font.setWeight(75)
-        self.IndividualLabel_2.setFont(font)
-        self.IndividualLabel_2.setStyleSheet("border: 2px solid rgb(146,146,146);\n"
+        self.textLabel.setFont(font)
+        self.textLabel.setStyleSheet("border: 2px solid rgb(146,146,146);\n"
 "color: rgb(146,146,146);\n"
 "border-radius: 12px;")
-        self.IndividualLabel_2.setFrameShadow(QtWidgets.QFrame.Raised)
-        self.IndividualLabel_2.setText("")
-        self.IndividualLabel_2.setAlignment(QtCore.Qt.AlignCenter)
-        self.IndividualLabel_2.setObjectName("IndividualLabel_2")
+        self.textLabel.setFrameShadow(QtWidgets.QFrame.Raised)
+        self.textLabel.setText("")
+        self.textLabel.setAlignment(QtCore.Qt.AlignCenter)
+        self.textLabel.setObjectName("textLabel")
         self.pushButton = QtWidgets.QPushButton(self.widget)
         self.pushButton.setGeometry(QtCore.QRect(390, 100, 41, 31))
         self.pushButton.setText("")
@@ -240,11 +261,11 @@ class Ui_MainWindow(object):
         self.pushButton.setIcon(icon1)
         self.pushButton.setIconSize(QtCore.QSize(30, 30))
         self.pushButton.setObjectName("pushButton")
-        self.IndividualLabel_2.raise_()
+        self.textLabel.raise_()
         self.diagramButton1.raise_()
         self.widget_2.raise_()
-        self.CommonLabel.raise_()
-        self.IndividualLabel.raise_()
+        self.commonButton.raise_()
+        self.individualButton.raise_()
         self.diagramButton2.raise_()
         self.fileButton1.raise_()
         self.fileButton2.raise_()
@@ -349,8 +370,8 @@ class Ui_MainWindow(object):
         _translate = QtCore.QCoreApplication.translate
         MainWindow.setWindowTitle(_translate("MainWindow", "MainWindow"))
         self.diagramButton1.setText(_translate("MainWindow", "ДИАГРАММА"))
-        self.CommonLabel.setText(_translate("MainWindow", "ОБЩИЙ"))
-        self.IndividualLabel.setText(_translate("MainWindow", "ИНДИВИДУАЛЬНЫЙ"))
+        self.commonButton.setText(_translate("MainWindow", "ОБЩИЙ"))
+        self.individualButton.setText(_translate("MainWindow", "ИНДИВИДУАЛЬНЫЙ"))
         self.diagramButton2.setText(_translate("MainWindow", "ДИАГРАММА"))
         self.lineEdit.setPlaceholderText(_translate("MainWindow", "Введите ФИО"))
         self.changeButton.setText(_translate("MainWindow", "ДОБАВИТЬ/ИЗМЕНИТЬ СПИСОК РАБОТНИКОВ"))

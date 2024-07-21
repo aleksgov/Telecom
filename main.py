@@ -84,6 +84,8 @@ class MyApp(QtWidgets.QMainWindow):
         self.ui.lineEdit.returnPressed.connect(self.display_line_edit_text)
         self.ui.lineEdit.textChanged.connect(self.on_text_changed)
         self.ui.diagramButton2.clicked.connect(self.create_individual_chart)
+        self.ui.commonButton.clicked.connect(self.open_common_file)
+        self.ui.individualButton.clicked.connect(self.open_individual_file)
 
         self.reports_folder = "Индивидуальные_отчеты"
         if not os.path.exists(self.reports_folder):
@@ -97,7 +99,6 @@ class MyApp(QtWidgets.QMainWindow):
         self.excel_file = "Работники.xlsx"
         self.custom_excel_file = None
         self.report_excel_file = "ОТЧЕТ_ТЕЛЕКОМ.xlsx"
-        self.report_date = None
 
     def on_text_changed(self):
         if self.ui.lineEdit.text():
@@ -212,7 +213,7 @@ class MyApp(QtWidgets.QMainWindow):
             self.create_new_excel()
             show_custom_message_box(self, "Информация", "Создан новый файл Работники.xlsx")
 
-        self.open_excel_file(self.excel_file)
+        self.open_file(self.excel_file)
 
     def create_new_excel(self):
         wb = Workbook()
@@ -226,7 +227,7 @@ class MyApp(QtWidgets.QMainWindow):
 
         wb.save(self.excel_file)
 
-    def open_excel_file(self, filename):
+    def open_file(self, filename):
         try:
             if os.name == 'nt':
                 os.startfile(filename)
@@ -234,6 +235,14 @@ class MyApp(QtWidgets.QMainWindow):
                 os.system(f"open {filename}")
         except Exception as e:
             show_custom_message_box(self, "Ошибка", f"Не удалось открыть файл: {e}")
+
+    def open_common_file(self):
+        path = os.path.join(os.path.dirname(__file__), "Общие_отчеты")
+        self.open_file(path)
+
+    def open_individual_file(self):
+        path = os.path.join(os.path.dirname(__file__), "Индивидуальные_отчеты")
+        self.open_file(path)
 
     def load_file(self):
         file_name, _ = QFileDialog.getOpenFileName(self, "Выберите файл", "",
@@ -314,8 +323,6 @@ class MyApp(QtWidgets.QMainWindow):
                 except ValueError:
                     month_year = "unknown"
 
-            self.report_date = month_year
-            print(self.report_date)
             file_name = f"ОБЩИЙ_ОТЧЕТ_{month_year}.xlsx"
             output_file = os.path.join(self.reports_folder, file_name)
             self.custom_excel_file = output_file
@@ -611,7 +618,7 @@ class MyApp(QtWidgets.QMainWindow):
 
             wb.save(output_file)
             show_custom_message_box(self, "Информация", f"Создан новый файл {file_name}")
-            self.open_excel_file(output_file)
+            self.open_file(output_file)
 
         except Exception as e:
             print(f"Ошибка при создании общего отчета: {e}")
@@ -717,7 +724,7 @@ class MyApp(QtWidgets.QMainWindow):
                 file_name = f"Индивидуальные_отчеты\\{input_fio}_отчет.xlsx"
                 new_wb.save(file_name)
                 show_custom_message_box(self, "Информация", f"Файл {file_name} создан успешно. Данные записаны.")
-                self.open_excel_file(file_name)
+                self.open_file(file_name)
             else:
                 show_custom_message_box(self, "Информация", "ФИО не найдено ни в одном из отчетов")
 
