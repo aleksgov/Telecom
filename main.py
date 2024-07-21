@@ -8,6 +8,7 @@ from PyQt5 import QtWidgets
 from PyQt5.QtWidgets import QFileDialog, QMessageBox
 from openpyxl import Workbook, load_workbook
 from openpyxl.utils import get_column_letter
+from openpyxl.cell.cell import Cell
 from design import Ui_MainWindow
 from openpyxl.styles import Alignment, Font, NamedStyle, Border, Side
 from PyQt5.QtGui import QFont, QIcon
@@ -492,7 +493,6 @@ class MyApp(QtWidgets.QMainWindow):
                 second_ws.column_dimensions[get_column_letter(i)].width = excel_width
 
             second_ws.row_dimensions[3].height = 38
-
             phone_style = NamedStyle(name="phone_style")
             phone_style.number_format = '[<=9999999]###-####;(###) #-##-##'
             phone_style.alignment = Alignment(horizontal="left")
