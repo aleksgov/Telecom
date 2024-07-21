@@ -8,22 +8,24 @@ from PyQt5 import QtWidgets
 from PyQt5.QtWidgets import QFileDialog, QMessageBox
 from openpyxl import Workbook, load_workbook
 from openpyxl.utils import get_column_letter
-from openpyxl.cell.cell import Cell
 from design import Ui_MainWindow
 from openpyxl.styles import Alignment, Font, NamedStyle, Border, Side
 from PyQt5.QtGui import QFont, QIcon
 from PyQt5.QtCore import Qt
 import matplotlib.pyplot as plt
+from matplotlib.dates import DateFormatter
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
-from PyQt5.QtWidgets import QVBoxLayout, QDialog
+from PyQt5.QtWidgets import QVBoxLayout, QDialog, QComboBox, QHBoxLayout
+import ctypes
 
+myappid = 'Telecom'
+ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(myappid)
 
 def show_custom_message_box(parent, title, message, icon_path=None):
     msg_box = QMessageBox(parent)
     msg_box.setWindowTitle(title)
     msg_box.setText(message)
 
-    # Установка пользовательского значка, если он предоставлен
     if icon_path:
         msg_box.setIconPixmap(QIcon(icon_path).pixmap(64, 64))
     else:
@@ -69,6 +71,8 @@ class MyApp(QtWidgets.QMainWindow):
 
         self.ui = Ui_MainWindow()
         self.ui.setupUi(self)
+        self.setWindowTitle("Telecom")
+        self.setWindowIcon(QIcon('images\\telecom.ico'))
 
         # Подключаем кнопки к функциям
         self.ui.changeButton.clicked.connect(self.manage_employees)
@@ -78,6 +82,7 @@ class MyApp(QtWidgets.QMainWindow):
         self.ui.diagramButton1.clicked.connect(self.create_histogram)
         self.ui.lineEdit.returnPressed.connect(self.display_line_edit_text)
         self.ui.lineEdit.textChanged.connect(self.on_text_changed)
+        self.ui.diagramButton2.clicked.connect(self.create_individual_chart)
 
         self.reports_folder = "Индивидуальные_отчеты"
         if not os.path.exists(self.reports_folder):
@@ -107,7 +112,6 @@ class MyApp(QtWidgets.QMainWindow):
             wb = load_workbook(self.custom_excel_file, data_only=True)
             ws = wb["Отчет"]
 
-            # Загрузка данных из файла "Работники.xlsx"
             workers_wb = load_workbook('Работники.xlsx', data_only=True)
             workers_ws = workers_wb.active
 
@@ -126,9 +130,8 @@ class MyApp(QtWidgets.QMainWindow):
             fio_dict = {}
             limit_dict = {}
 
-            # Чтение данных из файла "Работники.xlsx"
             for row in workers_ws.iter_rows(min_row=2, values_only=True):
-                if len(row) >= 4:  # Убедимся, что в строке достаточно столбцов
+                if len(row) >= 4:
                     fio = row[0]
                     number = row[1]
                     limit = row[3]
@@ -149,13 +152,10 @@ class MyApp(QtWidgets.QMainWindow):
             if not totals:
                 raise ValueError("Не удалось собрать данные для построения графика")
 
-                # Создаем список кортежей (ФИО, номер, сумма)
             data = list(zip(fio_dict.values(), fio_dict.keys(), totals))
 
-            # Сортируем список по ФИО (первый элемент каждого кортежа)
             data.sort(key=lambda x: x[0])
 
-            # Распаковываем отсортированные данные
             sorted_fio, sorted_numbers, sorted_totals = zip(*data)
 
             dialog = QDialog(self)
@@ -208,11 +208,9 @@ class MyApp(QtWidgets.QMainWindow):
 
     def manage_employees(self):
         if not os.path.exists(self.excel_file):
-            # Если файл не существует, создаем новый
             self.create_new_excel()
             show_custom_message_box(self, "Информация", "Создан новый файл Работники.xlsx")
 
-        # Открываем Excel файл с помощью стандартного приложения
         self.open_excel_file(self.excel_file)
 
     def create_new_excel(self):
@@ -222,7 +220,6 @@ class MyApp(QtWidgets.QMainWindow):
 
         headers = ["ФИО", "Номер", "Должность", "Сумма лимита руб. с НДС", "Счет затрат"]
 
-        # Добавляем заголовки на лист
         for col, header in enumerate(headers, start=1):
             ws.cell(row=1, column=col, value=header)
 
@@ -230,9 +227,9 @@ class MyApp(QtWidgets.QMainWindow):
 
     def open_excel_file(self, filename):
         try:
-            if os.name == 'nt':  # для Windows
+            if os.name == 'nt':
                 os.startfile(filename)
-            elif os.name == 'posix':  # для macOS и Linux
+            elif os.name == 'posix':
                 os.system(f"open {filename}")
         except Exception as e:
             show_custom_message_box(self, "Ошибка", f"Не удалось открыть файл: {e}")
@@ -241,7 +238,6 @@ class MyApp(QtWidgets.QMainWindow):
         file_name, _ = QFileDialog.getOpenFileName(self, "Выберите файл", "",
                                                    "CSV Files (*.csv);;Excel Files (*.xlsx *.xls)")
         if file_name:
-            # Обработка выбранного файла
             print(f"Выбран файл: {file_name}")
             self.ui.fileLabel.setText(f"Файл: {os.path.basename(file_name)}")
 
@@ -256,7 +252,7 @@ class MyApp(QtWidgets.QMainWindow):
                 show_custom_message_box(self, "Ошибка", f"Не удалось обработать файл: {e}")
 
     def convert_csv_to_excel(self, csv_file):
-        excel_file = "ОТЧЕТ_ТЕЛЕКОМ.xlsx"  # новое имя файла для сохранения в формате Excel
+        excel_file = "ОТЧЕТ_ТЕЛЕКОМ.xlsx"
 
         wb = Workbook()
         ws = wb.active
@@ -270,17 +266,14 @@ class MyApp(QtWidgets.QMainWindow):
                 reader = csv.reader(f, delimiter=';')
                 data = list(reader)
 
-            # Записываем данные во временный лист
             for row in data:
                 ws.append(row)
 
-            # Определяем столбцы для удаления
             columns_to_delete = []
             for col in range(1, ws.max_column + 1):
                 if all(ws.cell(row=row, column=col).value in (0, '0', None) for row in range(2, ws.max_row + 1)):
                     columns_to_delete.append(col)
 
-            # Удаляем столбцы в обратном порядке
             for col in sorted(columns_to_delete, reverse=True):
                 ws.delete_cols(col)
 
@@ -296,11 +289,9 @@ class MyApp(QtWidgets.QMainWindow):
             workers_wb = load_workbook('Работники.xlsx', data_only=True)
             workers_ws = workers_wb.active
 
-            # Загружаем данные из файла ОТЧЕТ_ТЕЛЕКОМ.xlsx
             report_wb = load_workbook(self.report_excel_file, data_only=True)
             report_ws = report_wb.active
 
-            # Определяем столбец с "Начало периода"
             start_period_col = None
             for col in range(1, report_ws.max_column + 1):
                 header = report_ws.cell(row=1, column=col).value
@@ -311,12 +302,10 @@ class MyApp(QtWidgets.QMainWindow):
             if not start_period_col:
                 raise ValueError("Не удалось найти столбец 'Начало периода' в файле")
 
-            # Извлекаем дату начала периода
             start_period = report_ws.cell(row=2, column=start_period_col).value
             if isinstance(start_period, datetime):
                 month_year = start_period.strftime("%m.%y")
             else:
-                # Попробуем обработать строку с датой
                 try:
                     start_date = datetime.strptime(start_period, "%d.%m.%Y")
                     month_year = start_date.strftime("%m.%y")
@@ -326,23 +315,19 @@ class MyApp(QtWidgets.QMainWindow):
 
             self.report_date = month_year
             print(self.report_date)
-            # Создаем название файла с датой
             file_name = f"ОБЩИЙ_ОТЧЕТ_{month_year}.xlsx"
             output_file = os.path.join(self.reports_folder, file_name)
             self.custom_excel_file = output_file
 
-            # Создаем новый файл ОБЩИЙ_ОТЧЕТ.xlsx
             wb = Workbook()
             ws = wb.active
             ws.title = "Отчет"
 
-            # Добавляем заголовки
             headers = ["АБОНЕНТ", "Итого без НДС", "Сумма НДС", "Итого с НДС"]
             ws.append(headers)
             columns = {cell.value: cell.column for cell in report_ws[1] if
                        cell.value in ["АБОНЕНТ", "Итого без НДС", "Сумма НДС", "Итого с НДС"]}
 
-            # Копируем данные из нужных столбцов
             for row in range(2, report_ws.max_row + 1):
                 data_row = []
                 for header in headers:
@@ -380,14 +365,12 @@ class MyApp(QtWidgets.QMainWindow):
                 for cell in row:
                     cell.alignment = Alignment(horizontal='right')
 
-            # Устанавливаем ширину столбцов на основе длины заголовков
             for col_idx, header in enumerate(headers, start=1):
                 column_letter = get_column_letter(col_idx)
                 column_width = max(len(str(header)) + 2, 10)
                 ws.column_dimensions[column_letter].width = column_width
             ws.column_dimensions['A'].width = 15
 
-            # Создаем вторую таблицу на новом листе
             second_ws = wb.create_sheet(title="Подробный отчет")
 
             start_period_col = None
@@ -404,7 +387,6 @@ class MyApp(QtWidgets.QMainWindow):
             start_period = report_ws.cell(row=2, column=start_period_col).value if start_period_col else "01"
             end_period = report_ws.cell(row=2, column=end_period_col).value if end_period_col else "30"
 
-            # Форматируем даты
             start_date = start_period.strftime("%d.%m.%Y") if isinstance(start_period, datetime) else start_period
             end_date = end_period.strftime("%d.%m.%Y") if isinstance(end_period, datetime) else end_period
 
@@ -424,11 +406,9 @@ class MyApp(QtWidgets.QMainWindow):
                 bottom=Side(border_style="thin", color="000000")
             )
 
-            # Добавляем данные в лист
             for row in data:
                 second_ws.append(row)
 
-            # Добавляем данные "Фактическая сумма Руб. с НДС"
             total_with_nds_col = next(cell.column for cell in ws[1] if cell.value == "Итого с НДС")
             fact_sum_col = 5
             for row in range(2, ws.max_row - 1):
@@ -440,7 +420,6 @@ class MyApp(QtWidgets.QMainWindow):
                 cell = second_ws.cell(row=row, column=fact_sum_col)
                 cell.value = f'={ws.title}!{get_column_letter(total_with_nds_col)}{row - 2}'
 
-            # Добавляем данные "Перерасход"
             limit_col = 4
             overspend_col = 7
             for row in range(4, second_ws.max_row + 1):
@@ -462,13 +441,11 @@ class MyApp(QtWidgets.QMainWindow):
             nds_with_26 = 12  # "Счет 26 с НДС"
             nds_without_26 = 13  # "Счет 26 без НДС"
 
-            # Применяем формулы для каждого случая
             apply_formula(second_ws, 4, account_col, nds_with_20, 20, fact_sum_nds)
             apply_formula(second_ws, 4, account_col, nds_without_20, 20, fact_sum_no_nds)
             apply_formula(second_ws, 4, account_col, nds_with_26, 26, fact_sum_nds)
             apply_formula(second_ws, 4, account_col, nds_without_26, 26, fact_sum_no_nds)
 
-            # Объединяем ячейки перед применением стилей
             second_ws.merge_cells('A1:J1')
             second_ws.merge_cells('A2:J2')
 
@@ -484,16 +461,13 @@ class MyApp(QtWidgets.QMainWindow):
                 ws[cell].alignment = Alignment(horizontal='center', vertical='center', wrap_text=True)
                 ws[cell].font = Font(name='Liberation Serif', size=12)
 
-            # Применяем header style к ячейкам A1 и A2
             header_style(second_ws, 'A1')
             header_style(second_ws, 'A2')
 
-            # Применяем title style к ячейкам A3-M3
-            for col in range(1, 14):  # A-J -> 1-10
+            for col in range(1, 14):
                 cell = second_ws.cell(row=3, column=col)
                 title_style(second_ws, cell.coordinate)
 
-            # Применяем regular style к остальным ячейкам
             for row in second_ws.iter_rows():
                 for cell in row:
                     if cell.coordinate not in ['A1', 'A2'] and not ('A3' <= cell.coordinate <= 'N3'):
@@ -517,7 +491,6 @@ class MyApp(QtWidgets.QMainWindow):
                 excel_width = width / 7  # Преобразуем пиксели в "экселевские" единицы
                 second_ws.column_dimensions[get_column_letter(i)].width = excel_width
 
-            # Настройка высоты строки
             second_ws.row_dimensions[3].height = 38
 
             phone_style = NamedStyle(name="phone_style")
@@ -529,7 +502,6 @@ class MyApp(QtWidgets.QMainWindow):
                                            max_row=report_ws.max_row):
                 cell_value = row[0].value
                 if cell_value is not None:
-                    # Преобразуем номер телефона в нужный формат
                     phone_number = f"{int(cell_value):010}"
                     formatted_number = f"({phone_number[:5]}) {phone_number[5]}-{phone_number[6:8]}-{phone_number[8:]}"
                     abonents.append(formatted_number)
@@ -628,17 +600,15 @@ class MyApp(QtWidgets.QMainWindow):
             result_sum_cell.font = Font(name='Arial Cyr', size=12)
             result_sum_cell.alignment = Alignment(horizontal='center', vertical='center')
 
-            # Обновляем применение стилей и границ
             for row in second_ws.iter_rows(min_row=3, min_col=1, max_row=result_row, max_col=13):
                 for cell in row:
-                    if not (cell.row == 3 and 10 <= cell.column <= 13):  # Исключаем J3-M3
+                    if not (cell.row == 3 and 10 <= cell.column <= 13):
                         cell.border = all_border
 
             for row in second_ws.iter_rows(min_row=4, max_row=last_row - 1, min_col=1, max_col=9):
                 for cell in row:
                     regular_style(second_ws, cell.coordinate)
 
-            # Сохранение файла
             wb.save(output_file)
             show_custom_message_box(self, "Информация", f"Создан новый файл {file_name}")
             self.open_excel_file(output_file)
@@ -719,10 +689,9 @@ class MyApp(QtWidgets.QMainWindow):
                 column_widths = [20, 30, 25, 30, 30, 20, 15]
 
                 headers = ["Номер телефона", "Должность", "Сумма лимита руб. с НДС",
-                           "Фактическая сумма Руб.без НДС", "Фактическая сумма Руб. с НДС",
+                           "Фактическая сумма Руб. с НДС", "Фактическая сумма Руб. без НДС",
                            "Перерасход", "Дата"]
 
-                # Insert FIO at the top
                 new_ws.insert_rows(1)
                 new_ws.merge_cells(start_row=1, start_column=1, end_row=1, end_column=len(headers))
                 new_ws.cell(row=1, column=1, value=f"{input_fio}").alignment = Alignment(horizontal='center',
@@ -730,19 +699,17 @@ class MyApp(QtWidgets.QMainWindow):
                 new_ws.row_dimensions[1].height = 30
                 new_ws['A1'].font = Font(name='Arial Cyr', size=14, bold=True)
 
-                # Apply headers starting from the second row
                 for col, header in enumerate(headers, start=1):
                     cell = new_ws.cell(row=2, column=col, value=header)
                     apply_style(new_ws, cell.coordinate, is_title=True)
                     new_ws.column_dimensions[cell.column_letter].width = column_widths[col - 1]
 
-                # Apply data rows starting from the third row
                 for row_index, row_data in enumerate(matching_rows, start=3):
                     new_ws.row_dimensions[row_index].height = 20
                     for col, value in enumerate(row_data, start=1):
                         cell_ref = new_ws.cell(row=row_index, column=col, value=value)
                         apply_style(new_ws, cell_ref.coordinate, is_title=False)
-                        if col in [3, 4, 5, 6]:  # For numeric columns
+                        if col in [3, 4, 5, 6]:
                             cell_ref.number_format = '#,##0.00'
 
                 set_borders(new_ws, start_col=1, end_col=7, start_row=2, end_row=len(matching_rows) + 2)
@@ -756,6 +723,114 @@ class MyApp(QtWidgets.QMainWindow):
 
         except Exception as e:
             show_custom_message_box(self, "Ошибка", f"Произошла ошибка: {str(e)}")
+
+    def create_individual_chart(self):
+        try:
+            input_fio = self.ui.lineEdit.text().strip()
+
+            if not input_fio or input_fio == "Введите ФИО":
+                show_custom_message_box(self, "Информация", "Пожалуйста, введите ФИО")
+                return
+
+            file_path = f"Индивидуальные_отчеты\\{input_fio}_отчет.xlsx"
+
+            if not os.path.exists(file_path):
+                show_custom_message_box(self, "Ошибка", f"Отчет для {input_fio} не найден")
+                return
+
+            wb = load_workbook(file_path, data_only=True)
+            ws = wb.active
+
+            phone_numbers = set()
+            for row in ws.iter_rows(min_row=3, min_col=1, max_col=1, values_only=True):
+                if row[0]:
+                    phone_numbers.add(row[0])
+
+            chart_dialog = QDialog(self)
+            chart_dialog.setWindowTitle(f"График расходов {input_fio}")
+            chart_dialog.setGeometry(100, 100, 800, 600)
+
+            combo_box = QComboBox()
+            combo_box.addItems(sorted(phone_numbers))
+
+            fig, ax = plt.subplots(figsize=(10, 6))
+            canvas = FigureCanvas(fig)
+
+            annot = ax.annotate("", xy=(0, 0), xytext=(20, 20), textcoords="offset points",
+                                bbox=dict(boxstyle="round", fc="w"),
+                                arrowprops=dict(arrowstyle="->"))
+            annot.set_visible(False)
+
+            def update_annot(ind, x, y):
+                annot.xy = (x, y)
+                text = f"Дата: {x.strftime('%m.%y')}\nСумма: {y:.2f}"
+                annot.set_text(text)
+                annot.get_bbox_patch().set_alpha(0.4)
+
+            def hover(event):
+                vis = annot.get_visible()
+                if event.inaxes == ax:
+                    for line in ax.get_lines():
+                        cont, ind = line.contains(event)
+                        if cont:
+                            x, y = line.get_data()
+                            annot.xy = (x[ind["ind"][0]], y[ind["ind"][0]])
+                            update_annot(ind["ind"][0], x[ind["ind"][0]], y[ind["ind"][0]])
+                            annot.set_visible(True)
+                            fig.canvas.draw_idle()
+                            return
+                if vis:
+                    annot.set_visible(False)
+                    fig.canvas.draw_idle()
+
+            fig.canvas.mpl_connect("motion_notify_event", hover)
+
+            def update_chart(selected_number):
+                ax.clear()
+                dates = []
+                amounts = []
+                limits = []
+                for row in ws.iter_rows(min_row=3, values_only=True):
+                    if row[0] == selected_number:
+                        date = row[-1]
+                        amount = row[4]
+                        limit = row[2]
+                        if date and amount and limit:
+                            dates.append(datetime.strptime(date, "%m.%y"))
+                            amounts.append(float(amount))
+                            limits.append(float(limit))
+
+                ax.plot(dates, amounts, marker='o', label='Фактическая сумма')
+                ax.plot(dates, limits, color='red', linestyle='--', label='Лимит')
+
+                ax.set_xlabel("Дата")
+                ax.set_ylabel("Сумма (руб. с НДС)")
+                ax.set_title(f"Динамика расходов для {input_fio} (номер: {selected_number})")
+                ax.legend()
+
+                ax.xaxis.set_major_formatter(DateFormatter('%m.%y'))
+                plt.xticks(rotation=45)
+                plt.tight_layout()
+
+                canvas.draw()
+
+            combo_box.currentTextChanged.connect(update_chart)
+
+            layout = QVBoxLayout()
+            top_layout = QHBoxLayout()
+            top_layout.addWidget(combo_box, alignment=Qt.AlignLeft)
+            top_layout.addStretch(1)
+            layout.addLayout(top_layout)
+            layout.addWidget(canvas)
+
+            chart_dialog.setLayout(layout)
+
+            update_chart(combo_box.currentText())
+
+            chart_dialog.exec_()
+
+        except Exception as e:
+            show_custom_message_box(self, "Ошибка", f"Не удалось создать график: {str(e)}")
 
 
 if __name__ == "__main__":
