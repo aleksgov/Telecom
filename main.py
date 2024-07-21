@@ -73,7 +73,7 @@ class MyApp(QtWidgets.QMainWindow):
         self.ui = Ui_MainWindow()
         self.ui.setupUi(self)
         self.setWindowTitle("Telecom")
-        self.setWindowIcon(QIcon('telecom.ico'))
+        self.setWindowIcon(QIcon('images\\telecom.ico'))
 
         # Подключаем кнопки к функциям
         self.ui.changeButton.clicked.connect(self.manage_employees)
