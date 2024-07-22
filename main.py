@@ -505,19 +505,11 @@ class MyApp(QtWidgets.QMainWindow):
                 for cell in row:
                     cell.font = Font(size=12)
 
-            for row in range(10, 30):
-                cell = second_ws.cell(row=row, column=10)
-                regular_style(second_ws, cell.coordinate)
-
-            cell = second_ws.cell(row=9, column=13)
-            regular_style(second_ws, cell.coordinate)
-
-            column_widths = [125, 135, 240, 111, 111, 111, 80, 80, 80, 101, 101, 101, 101]  # Ширина столбцов
+            column_widths = [125, 300, 240, 80, 100, 100, 80, 80, 80, 101, 101, 101, 101]  # Ширина столбцов
             for i, width in enumerate(column_widths, start=1):
                 excel_width = width / 7  # Преобразуем пиксели в "экселевские" единицы
                 second_ws.column_dimensions[get_column_letter(i)].width = excel_width
 
-            second_ws.row_dimensions[3].height = 38
             phone_style = NamedStyle(name="phone_style")
             phone_style.number_format = '[<=9999999]###-####;(###) #-##-##'
             phone_style.alignment = Alignment(horizontal="left")
@@ -630,9 +622,13 @@ class MyApp(QtWidgets.QMainWindow):
                     if not (cell.row == 3 and 10 <= cell.column <= 13):
                         cell.border = all_border
 
-            for row in second_ws.iter_rows(min_row=4, max_row=last_row - 1, min_col=1, max_col=9):
+            for row in second_ws.iter_rows(min_row=4, max_row=last_row - 1, min_col=1, max_col=13):
                 for cell in row:
                     regular_style(second_ws, cell.coordinate)
+
+            for row in range(1, second_ws.max_row + 1):
+                second_ws.row_dimensions[row].height = 15.75
+            second_ws.row_dimensions[3].height = 38
 
             wb.save(output_file)
             show_custom_message_box(self, "Информация", f"Создан новый файл {file_name}")
@@ -730,7 +726,7 @@ class MyApp(QtWidgets.QMainWindow):
                     new_ws.column_dimensions[cell.column_letter].width = column_widths[col - 1]
 
                 for row_index, row_data in enumerate(matching_rows, start=3):
-                    new_ws.row_dimensions[row_index].height = 20
+                    new_ws.row_dimensions[row_index].height = 22
                     for col, value in enumerate(row_data, start=1):
                         cell_ref = new_ws.cell(row=row_index, column=col, value=value)
                         apply_style(new_ws, cell_ref.coordinate, is_title=False)
