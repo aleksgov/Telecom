@@ -4,11 +4,12 @@ import chardet
 import sys
 import re
 from datetime import datetime
-from PyQt5 import QtWidgets
+from PyQt5 import QtWidgets, QtGui
 from PyQt5.QtWidgets import QFileDialog, QMessageBox
 from openpyxl import Workbook, load_workbook
 from openpyxl.utils import get_column_letter
 from design import Ui_MainWindow
+from design import resource_path
 from openpyxl.styles import Alignment, Font, NamedStyle, Border, Side
 from PyQt5.QtGui import QFont, QIcon
 from PyQt5.QtCore import Qt
@@ -72,7 +73,7 @@ class MyApp(QtWidgets.QMainWindow):
         self.ui = Ui_MainWindow()
         self.ui.setupUi(self)
         self.setWindowTitle("Telecom")
-        self.setWindowIcon(QIcon('images/telecom.ico'))
+        self.setWindowIcon(QtGui.QIcon(resource_path('images/telecom.ico')))
 
         # Подключаем кнопки к функциям
         self.ui.changeButton.clicked.connect(self.manage_employees)

@@ -9,7 +9,13 @@
 
 
 from PyQt5 import QtCore, QtGui, QtWidgets
+import os
+import sys
 
+def resource_path(relative_path):
+    """ Получиаем абсолютный путь к ресурсу, работает как для development, так и для PyInstaller """
+    base_path = getattr(sys, '_MEIPASS', os.path.dirname(os.path.abspath(__file__)))
+    return os.path.join(base_path, relative_path)
 
 class Ui_MainWindow(object):
     def setupUi(self, MainWindow):
@@ -182,7 +188,7 @@ class Ui_MainWindow(object):
 """)
         self.fileButton1.setText("")
         icon = QtGui.QIcon()
-        icon.addPixmap(QtGui.QPixmap("images/file.png"), QtGui.QIcon.Normal, QtGui.QIcon.Off)
+        icon.addPixmap(QtGui.QPixmap(resource_path('images/file.png')), QtGui.QIcon.Normal, QtGui.QIcon.Off)
         self.fileButton1.setIcon(icon)
         self.fileButton1.setIconSize(QtCore.QSize(60, 60))
         self.fileButton1.setObjectName("fileButton1")
@@ -257,7 +263,7 @@ class Ui_MainWindow(object):
         self.pushButton.setGeometry(QtCore.QRect(390, 100, 41, 31))
         self.pushButton.setText("")
         icon1 = QtGui.QIcon()
-        icon1.addPixmap(QtGui.QPixmap("images/loupe.png"), QtGui.QIcon.Normal, QtGui.QIcon.Off)
+        icon1.addPixmap(QtGui.QPixmap(resource_path('images/loupe.png')), QtGui.QIcon.Normal, QtGui.QIcon.Off)
         self.pushButton.setIcon(icon1)
         self.pushButton.setIconSize(QtCore.QSize(30, 30))
         self.pushButton.setObjectName("pushButton")
@@ -328,7 +334,7 @@ class Ui_MainWindow(object):
 """)
         self.fileButton3.setText("")
         icon2 = QtGui.QIcon()
-        icon2.addPixmap(QtGui.QPixmap("images/file+.png"), QtGui.QIcon.Normal, QtGui.QIcon.Off)
+        icon2.addPixmap(QtGui.QPixmap(resource_path('images/file+.png')), QtGui.QIcon.Normal, QtGui.QIcon.Off)
         self.fileButton3.setIcon(icon2)
         self.fileButton3.setIconSize(QtCore.QSize(52, 52))
         self.fileButton3.setObjectName("fileButton3")
