@@ -1,7 +1,8 @@
 import sys
 import ctypes
 import os
-from PyQt5 import QtWidgets
+from design import resource_path
+from PyQt5 import QtWidgets, QtGui
 from PyQt5.QtWidgets import QFileDialog, QMessageBox
 from PyQt5.QtGui import QFont, QIcon
 from PyQt5.QtCore import Qt
@@ -60,7 +61,7 @@ class MyApp(QtWidgets.QMainWindow):
         self.ui = Ui_MainWindow()
         self.ui.setupUi(self)
         self.setWindowTitle("Telecom")
-        self.setWindowIcon(QIcon('images/telecom.ico'))
+        self.setWindowIcon(QtGui.QIcon(resource_path('images/telecom.ico')))
 
         self.setup_connections()
 
