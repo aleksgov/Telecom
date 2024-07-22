@@ -1,23 +1,11 @@
-import os
-import csv
-import chardet
 import sys
-import re
-from datetime import datetime
-from PyQt5 import QtWidgets, QtGui
+import ctypes
+import os
+from PyQt5 import QtWidgets
 from PyQt5.QtWidgets import QFileDialog, QMessageBox
-from openpyxl import Workbook, load_workbook
-from openpyxl.utils import get_column_letter
-from design import Ui_MainWindow
-from design import resource_path
-from openpyxl.styles import Alignment, Font, NamedStyle, Border, Side
 from PyQt5.QtGui import QFont, QIcon
 from PyQt5.QtCore import Qt
-import matplotlib.pyplot as plt
-from matplotlib.dates import DateFormatter
-from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
-from PyQt5.QtWidgets import QVBoxLayout, QDialog, QComboBox, QHBoxLayout
-import ctypes
+from design import Ui_MainWindow
 
 myappid = 'Telecom'
 ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(myappid)
@@ -69,23 +57,10 @@ def show_custom_message_box(parent, title, message, icon_path=None):
 class MyApp(QtWidgets.QMainWindow):
     def __init__(self):
         super().__init__()
-
         self.ui = Ui_MainWindow()
         self.ui.setupUi(self)
         self.setWindowTitle("Telecom")
-        self.setWindowIcon(QtGui.QIcon(resource_path('images/telecom.ico')))
-
-        # Подключаем кнопки к функциям
-        self.ui.changeButton.clicked.connect(self.manage_employees)
-        self.ui.fileButton1.clicked.connect(self.create_custom_excel)
-        self.ui.fileButton2.clicked.connect(self.display_line_edit_text)
-        self.ui.fileButton3.clicked.connect(self.load_file)
-        self.ui.diagramButton1.clicked.connect(self.create_histogram)
-        self.ui.lineEdit.returnPressed.connect(self.display_line_edit_text)
-        self.ui.lineEdit.textChanged.connect(self.on_text_changed)
-        self.ui.diagramButton2.clicked.connect(self.create_individual_chart)
-        self.ui.commonButton.clicked.connect(self.open_common_file)
-        self.ui.individualButton.clicked.connect(self.open_individual_file)
+        self.setWindowIcon(QIcon('images/telecom.ico'))
 
         self.reports_folder = "Индивидуальные_отчеты"
         if not os.path.exists(self.reports_folder):
@@ -100,6 +75,18 @@ class MyApp(QtWidgets.QMainWindow):
         self.custom_excel_file = None
         self.report_excel_file = "ОТЧЕТ_ТЕЛЕКОМ.xlsx"
 
+    def setup_connections(self):
+        self.ui.changeButton.clicked.connect(self.manage_employees)
+        self.ui.fileButton1.clicked.connect(self.create_custom_excel)
+        self.ui.fileButton2.clicked.connect(self.display_line_edit_text)
+        self.ui.fileButton3.clicked.connect(self.load_file)
+        self.ui.diagramButton1.clicked.connect(self.create_histogram)
+        self.ui.lineEdit.returnPressed.connect(self.display_line_edit_text)
+        self.ui.lineEdit.textChanged.connect(self.on_text_changed)
+        self.ui.diagramButton2.clicked.connect(self.create_individual_chart)
+        self.ui.commonButton.clicked.connect(self.open_common_file)
+        self.ui.individualButton.clicked.connect(self.open_individual_file)
+
     def on_text_changed(self):
         if self.ui.lineEdit.text():
             self.ui.lineEdit.setStyleSheet("color: black;")
@@ -107,6 +94,11 @@ class MyApp(QtWidgets.QMainWindow):
             self.ui.lineEdit.setStyleSheet("color: rgb(146,146,146);")
 
     def create_histogram(self):
+        import matplotlib.pyplot as plt
+        from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
+        from PyQt5.QtWidgets import QVBoxLayout, QDialog, QComboBox, QHBoxLayout
+        from openpyxl import load_workbook
+
         try:
             reports_folder = "Общие_отчеты"
             report_files = [f for f in os.listdir(reports_folder) if
@@ -235,6 +227,8 @@ class MyApp(QtWidgets.QMainWindow):
         self.open_file(self.excel_file)
 
     def create_new_excel(self):
+        from openpyxl import Workbook
+
         wb = Workbook()
         ws = wb.active
         ws.title = "Список работников"
@@ -262,6 +256,8 @@ class MyApp(QtWidgets.QMainWindow):
         self.open_file("Индивидуальные_отчеты")
 
     def load_file(self):
+        from openpyxl import load_workbook
+
         file_name, _ = QFileDialog.getOpenFileName(self, "Выберите файл", "",
                                                    "CSV Files (*.csv);;Excel Files (*.xlsx *.xls)")
         if file_name:
@@ -279,6 +275,10 @@ class MyApp(QtWidgets.QMainWindow):
                 show_custom_message_box(self, "Ошибка", f"Не удалось обработать файл: {e}")
 
     def convert_csv_to_excel(self, csv_file):
+        from openpyxl import Workbook
+        import csv
+        import chardet
+
         excel_file = "ОТЧЕТ_ТЕЛЕКОМ.xlsx"
 
         wb = Workbook()
@@ -312,6 +312,11 @@ class MyApp(QtWidgets.QMainWindow):
             show_custom_message_box(self, "Ошибка", f"Не удалось прочитать CSV файл: {e}")
 
     def create_custom_excel(self):
+        from openpyxl import load_workbook, Workbook
+        from openpyxl.utils import get_column_letter
+        from openpyxl.styles import Alignment, Font, NamedStyle, Border, Side
+        from datetime import datetime
+
         try:
             workers_wb = load_workbook('Работники.xlsx', data_only=True)
             workers_ws = workers_wb.active
@@ -638,6 +643,11 @@ class MyApp(QtWidgets.QMainWindow):
             show_custom_message_box(self, "Ошибка", f"Не удалось создать общий отчет: {e}")
 
     def display_line_edit_text(self):
+        from openpyxl import load_workbook, Workbook
+        from openpyxl.utils import get_column_letter
+        from openpyxl.styles import Alignment, Font, Border, Side
+        import re
+
         input_fio = self.ui.lineEdit.text().strip()
 
         def extract_month_year(filename):
@@ -745,6 +755,14 @@ class MyApp(QtWidgets.QMainWindow):
             show_custom_message_box(self, "Ошибка", f"Произошла ошибка: {str(e)}")
 
     def create_individual_chart(self):
+        from openpyxl import load_workbook
+        from datetime import datetime
+        import matplotlib.pyplot as plt
+        from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
+        from matplotlib.dates import DateFormatter
+        from PyQt5.QtWidgets import QDialog, QVBoxLayout, QHBoxLayout, QComboBox
+        from PyQt5.QtCore import Qt
+
         try:
             input_fio = self.ui.lineEdit.text().strip()
 
