@@ -72,7 +72,7 @@ class MyApp(QtWidgets.QMainWindow):
         self.ui = Ui_MainWindow()
         self.ui.setupUi(self)
         self.setWindowTitle("Telecom")
-        self.setWindowIcon(QIcon('images\\telecom.ico'))
+        self.setWindowIcon(QIcon('images/telecom.ico'))
 
         # Подключаем кнопки к функциям
         self.ui.changeButton.clicked.connect(self.manage_employees)
@@ -255,12 +255,10 @@ class MyApp(QtWidgets.QMainWindow):
             show_custom_message_box(self, "Ошибка", f"Не удалось открыть файл: {e}")
 
     def open_common_file(self):
-        path = os.path.join(os.path.dirname(__file__), "Общие_отчеты")
-        self.open_file(path)
+        self.open_file("Общие_отчеты")
 
     def open_individual_file(self):
-        path = os.path.join(os.path.dirname(__file__), "Индивидуальные_отчеты")
-        self.open_file(path)
+        self.open_file("Индивидуальные_отчеты")
 
     def load_file(self):
         file_name, _ = QFileDialog.getOpenFileName(self, "Выберите файл", "",
