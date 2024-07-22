@@ -62,6 +62,8 @@ class MyApp(QtWidgets.QMainWindow):
         self.setWindowTitle("Telecom")
         self.setWindowIcon(QIcon('images/telecom.ico'))
 
+        self.setup_connections()
+
         self.reports_folder = "Индивидуальные_отчеты"
         if not os.path.exists(self.reports_folder):
             os.makedirs(self.reports_folder)
